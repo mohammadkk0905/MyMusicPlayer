@@ -1,0 +1,66 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.ksp)
+}
+
+android {
+    namespace 'com.mohammadkk.mymusicplayer'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.mohammadkk.mymusicplayer"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        vectorDrawables.useSupportLibrary true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            resValue "string", "app_name", "My Music Player"
+        }
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix ' DEBUG'
+            resValue "string", "app_name", "MPP debug"
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    lint {
+        disable 'MissingTranslation', 'NotifyDataSetChanged'
+    }
+}
+
+dependencies {
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.preference.ktx
+    implementation libs.androidx.constraintlayout
+    implementation libs.androidx.swiperefreshlayout
+    implementation libs.androidx.media
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    ksp libs.androidx.room.compiler
+    implementation libs.glide
+    ksp libs.glide.ksp
+    implementation libs.library
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+}

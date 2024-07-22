@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ToolbarActionStyle" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="colorControlHighlight">@color/action_color</item>
+        <item name="popupMenuBackground">@drawable/bg_popup_menu</item>
+    </style>
+    
+    <style name="ToolbarActionStyle.Popup" parent="ThemeOverlay.MaterialComponents.Light" />
+    
+    <style name="ThemeOverlay.Demo.BottomSheetDialog" parent="@style/ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.Demo.BottomSheet</item>
+        <item name="colorSurfaceContainerLow">@color/toolbar_bg</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:colorBackground">@color/toolbar_bg</item>
+    </style>
+    
+    <style name="Widget.Demo.BottomSheet" parent="Widget.Material3.BottomSheet">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Demo.BottomSheet</item>
+        <item name="behavior_skipCollapsed">true</item>
+        <item name="behavior_fitToContents">true</item>
+        <item name="behavior_hideable">true</item>
+    </style>
+    
+    <style name="ShapeAppearance.Demo.BottomSheet" parent="">
+        <item name="cornerSizeTopLeft">@dimen/spacing_medium</item>
+        <item name="cornerSizeTopRight">@dimen/spacing_medium</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+        <item name="cornerFamily">rounded</item>
+    </style>
+    
+    <style name="TextAppearance.Audio.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/vazir_regular</item>
+        <item name="android:fontFamily">@font/vazir_regular</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">0.0075454545</item>
+    </style>
+    
+    <style name="TextAppearance.Audio.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/vazir_regular</item>
+        <item name="android:fontFamily">@font/vazir_regular</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">0.020</item>
+    </style>
+
+    <style name="TextAppearance.Audio.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/vazir_regular</item>
+        <item name="android:fontFamily">@font/vazir_regular</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">-0.0064285714</item>
+    </style>
+
+    <style name="TextAppearance.Audio.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/vazir_semibold</item>
+        <item name="android:fontFamily">@font/vazir_semibold</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.00825</item>
+    </style>
+    
+    <style name="TextAppearance.Audio.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/vazir_regular</item>
+        <item name="android:fontFamily">@font/vazir_regular</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.003</item>
+    </style>
+    
+    <style name="TextAppearance.Audio.TitleMidLarge" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/vazir_regular</item>
+        <item name="android:fontFamily">@font/vazir_regular</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    
+    <style name="TextAppearance.Audio.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/vazir_regular</item>
+        <item name="android:fontFamily">@font/vazir_regular</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">0.015</item>
+    </style>
+    
+    <style name="Widget.Audio.TextView.Base" parent="Widget.AppCompat.TextView">
+        <item name="android:textAlignment">viewStart</item>
+    </style>
+    
+    <style name="Widget.Audio.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.Audio.TitleMedium</item>
+        <item name="android:background">@color/toolbar_bg</item>
+        <item name="android:elevation">@dimen/spacing_tiny</item>
+        <item name="popupMenuBackground">@drawable/bg_popup_menu</item>
+    </style>
+    
+    <style name="Widget.Audio.Toolbar.Icon" parent="Widget.Audio.Toolbar">
+        <item name="navigationIcon">@drawable/ic_west</item>
+    </style>
+
+    <style name="Widget.Audio.Image.Full" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="layout_constraintDimensionRatio">1</item>
+        <item name="cornerRadius">@dimen/spacing_small</item>
+        <item name="backgroundColor">@color/grey_300</item>
+        <item name="tintStaticIcon">@color/pink_400</item>
+    </style>
+    
+    <style name="Widget.Audio.TextView.Primary" parent="Widget.Audio.TextView.Base">
+        <item name="android:ellipsize">marquee</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:marqueeRepeatLimit">marquee_forever</item>
+        <item name="android:textAppearance">@style/TextAppearance.Audio.TitleMidLarge</item>
+    </style>
+    
+    <style name="Widget.Audio.TextView.Secondary" parent="Widget.Audio.TextView.Base">
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+        <item name="android:textAppearance">@style/TextAppearance.Audio.BodyLarge</item>
+    </style>
+    
+    <style name="Widget.Audio.BottomSheet.Handle" parent="Widget.Material3.BottomSheet.DragHandle">
+        <item name="tint">?android:attr/textColorTertiary</item>
+        <item name="android:minHeight">32dp</item>
+        <item name="android:paddingBottom">@dimen/spacing_small</item>
+    </style>
+    
+    <style name="Widget.Audio.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">@dimen/spacing_tiny</item>
+    </style>
+    
+    <style name="Widget.Audio.ActionMode" parent="@style/Widget.Material3.ActionMode">
+        <item name="background">@color/action_bg</item>
+    </style>
+    
+    <style name="Widget.Audio.Slider" parent="Widget.Material3.Slider">
+        <item name="trackColorInactive">@color/track_color_slider</item>
+        <item name="haloRadius">@dimen/spacing_medium</item>
+        <item name="haloColor">@color/halo_color_slider</item>
+        <item name="thumbRadius">6dp</item>
+        <item name="labelBehavior">gone</item>
+        <item name="tickVisible">false</item>
+        <item name="trackStopIndicatorSize">0dp</item>
+        <item name="trackHeight">@dimen/spacing_tiny</item>
+        <item name="thumbWidth">@dimen/spacing_mid_medium</item>
+        <item name="thumbHeight">@dimen/spacing_mid_medium</item>
+        <item name="thumbTrackGapSize">0dp</item>
+        <item name="thumbElevation">2dp</item>
+    </style>
+    
+    <style name="Theme.Audio.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurfaceContainerHigh">@color/toolbar_bg</item>
+        <item name="backgroundTint">@color/toolbar_bg</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Medium</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Material3.Corner.Medium</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.Audio.Title</item>
+    </style>
+    
+    <style name="MaterialAlertDialog.Audio.Title" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Headline6</item>
+    </style>
+    
+    <style name="ShapeAppearanceOverlay.MaterialAlertDialog.Rounded" parent="">
+        <item name="cornerSize">@dimen/spacing_small</item>
+    </style>
+    
+    <style name="Widget.Audio.FloatingActionButton.PlayPause" parent="Widget.MaterialComponents.FloatingActionButton">
+        <item name="backgroundTint">@color/blue_500</item>
+        <item name="tint">@color/grey_50</item>
+        <item name="rippleColor">?attr/colorControlHighlight</item>
+        <item name="fabCustomSize">64dp</item>
+        <item name="maxImageSize">32dp</item>
+        <item name="android:elevation">0dp</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <style name="DefaultCardViewStyle" parent="">
+        <item name="cardBackgroundColor">@android:color/transparent</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardMaxElevation">0dp</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="cardPreventCornerOverlap">false</item>
+    </style>
+
+    <style name="DefaultCardViewStyle.Rounded" parent="DefaultCardViewStyle">
+        <item name="cardCornerRadius">@dimen/spacing_small</item>
+    </style>
+
+    <style name="DefaultCardViewStyle.Circle" parent="DefaultCardViewStyle">
+        <item name="shapeAppearanceOverlay">@style/CircularImageViewStyle</item>
+    </style>
+    
+    <style name="CircularImageViewStyle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+    
+    <style name="BtnOverflowStyle">
+        <item name="srcCompat">@drawable/ic_more_horiz</item>
+        <item name="android:layout_width">45dp</item>
+        <item name="android:layout_height">45dp</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:background">@drawable/round_selector</item>
+        <item name="android:focusableInTouchMode">false</item>
+        <item name="android:focusable">false</item>
+    </style>
+</resources>

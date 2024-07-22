@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:id="@+id/dragSheet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    
+    <TextView
+        android:id="@+id/tvSortName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/spacing_small"
+        android:text="@string/order_by"
+        android:textAppearance="@style/TextAppearance.Audio.TitleMidLarge" />
+   
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSortMode"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingTop="0dp"
+        android:paddingBottom="@dimen/spacing_small"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_sort_mode" />
+</LinearLayout>

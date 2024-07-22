@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MusicImageView">
+        <attr name="cornerRadius" format="dimension" />
+        <attr name="staticIcon" format="reference" />
+        <attr name="tintStaticIcon" format="color" />
+        <attr name="backgroundColor" format="color" />
+    </declare-styleable>
+</resources>
