@@ -4,7 +4,6 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.forEach
@@ -27,16 +26,13 @@ import com.mohammadkk.mymusicplayer.extensions.toFormattedDate
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.MusicService
-import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.utils.RingtoneManager
-import me.zhanghai.android.fastscroll.PopupTextProvider
-import kotlin.math.abs
 
 class SongsAdapter(
     context: FragmentActivity,
     var dataSet: MutableList<Song>,
     private var mode: String
-) : AbsMultiAdapter<SongsAdapter.SongHolder, Song>(context), PopupTextProvider {
+) : AbsMultiAdapter<SongsAdapter.SongHolder, Song>(context) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -63,25 +59,6 @@ class SongsAdapter(
     override fun onBindViewHolder(holder: SongHolder, position: Int) {
         holder.bindItems(dataSet[holder.absoluteAdapterPosition])
     }
-    override fun getPopupText(view: View, position: Int): CharSequence {
-        val song = dataSet.getOrNull(position)
-        val sortName = abs(baseSettings.songsSorting)
-        if (mode == "OTG") {
-            return if (sortName == Constant.SORT_BY_DATE_ADDED) {
-                song?.duration?.toFormattedDuration(true) ?: "-"
-            } else {
-                Libraries.getSectionName(song?.title, true)
-            }
-        }
-        val result = when (sortName) {
-            Constant.SORT_BY_TITLE -> song?.title
-            Constant.SORT_BY_ALBUM -> song?.album
-            Constant.SORT_BY_ARTIST -> song?.artist
-            Constant.SORT_BY_DURATION -> return song?.duration?.toFormattedDuration(true) ?: "-"
-            else -> song?.title
-        }
-        return Libraries.getSectionName(result, true)
-    }
     fun swapDataSet(dataSet: List<Song>) {
         this.dataSet = ArrayList(dataSet)
         notifyDataSetChanged()
@@ -106,10 +83,13 @@ class SongsAdapter(
             )
             MusicService.mCurrSong = song
             if (mode != "MAIN") {
-                if (context is BaseActivity) {
-                    context.isFadeAnimation = false
-                }
+                (context as? BaseActivity)?.isFadeAnimation = false
             }
+            baseSettings.lastStateMode = Pair(mode, when (mode) {
+                "ARTIST" -> song.albumId
+                "ALBUM" -> song.albumId
+                else -> song.id
+            })
             context.startActivity(intent)
         }
     }

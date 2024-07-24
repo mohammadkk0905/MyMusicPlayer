@@ -9,12 +9,12 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.util.Log;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.mohammadkk.mymusicplayer.models.FileItem;
-import com.mohammadkk.mymusicplayer.models.Storage;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,21 +30,16 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 
 public class FileUtils {
-    /** @noinspection SpellCheckingInspection*/
-    public static ArrayList<Storage> listRoots() {
-        ArrayList<Storage> storageItems = new ArrayList<>();
+    @NonNull
+    public static ArrayList<Pair<String, File>> listRoots() {
+        ArrayList<Pair<String, File>> storageItems = new ArrayList<>();
         HashSet<String> paths = new HashSet<>();
         String defaultPath = getExternalStorageDirectory().getPath();
         String defaultPathState = Environment.getExternalStorageState();
         if (defaultPathState.equals(Environment.MEDIA_MOUNTED) || defaultPathState.equals(Environment.MEDIA_MOUNTED_READ_ONLY)) {
-            Storage ext = new Storage();
-            if (Environment.isExternalStorageRemovable()) {
-                ext.title = "SD Card";
-            } else {
-                ext.title = "Internal Storage";
-            }
-            ext.file = getExternalStorageDirectory();
-            storageItems.add(ext);
+            String mTitle = Environment.isExternalStorageRemovable() ? "SD Card" : "Internal Storage";
+            File mFile = getExternalStorageDirectory();
+            storageItems.add(new Pair<>(mTitle, mFile));
             paths.add(defaultPath);
         }
 
@@ -71,14 +66,9 @@ public class FileUtils {
                             }
                             paths.add(path);
                             try {
-                                Storage item = new Storage();
-                                if (path.toLowerCase(Locale.ROOT).contains("sd")) {
-                                    item.title = "SD Card";
-                                } else {
-                                    item.title = "External Storage";
-                                }
-                                item.file = new File(path);
-                                storageItems.add(item);
+                                String mTitle = path.toLowerCase(Locale.ROOT).contains("sd") ? "SD Card" : "External Storage";
+                                File mFile = new File(path);
+                                storageItems.add(new Pair<>(mTitle, mFile));
                             } catch (Exception e) {
                                 Log.w("FileUtils", "listRoots: " + e);
                             }

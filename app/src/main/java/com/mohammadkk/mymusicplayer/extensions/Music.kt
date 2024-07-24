@@ -32,24 +32,19 @@ fun Long.toAlbumArtURI(): Uri {
     )
 }
 fun Int.toFormattedDuration(isSeekBar: Boolean): String {
-    var mSeconds = this / 1000
-    var hours = 0
-    var minutes = 0
-    if (mSeconds >= 3600) {
-        hours = mSeconds / 3600
-        mSeconds -= hours * 3600
-    }
-    if (mSeconds >= 60) {
-        minutes = mSeconds / 60
-        mSeconds -= minutes * 60
-    }
-    val seconds = mSeconds
-
-    return if (hours > 0) {
-        String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
-    } else {
+    var minutes = this / 1000 / 60
+    val seconds = this / 1000 % 60
+    return if (minutes < 60) {
         val defFormat = if (!isSeekBar) "%02dm:%02ds" else "%02d:%02d"
         String.format(Locale.getDefault(), defFormat, minutes, seconds)
+    } else {
+        val hours = minutes / 60
+        minutes %= 60
+        if (!isSeekBar) {
+            String.format(Locale.getDefault(), "%02dh:%02dm", hours, minutes)
+        } else {
+            String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+        }
     }
 }
 fun Int.toFormattedDate(): String {
@@ -118,7 +113,4 @@ fun Song.getAlbumArt(context: Context): Bitmap? {
     } catch (e: Exception) {
         null
     }
-}
-fun Collection<Song>.findIndex(song: Song?) = indexOfFirst {
-    it.id == song?.id && it.albumId == song.albumId
 }

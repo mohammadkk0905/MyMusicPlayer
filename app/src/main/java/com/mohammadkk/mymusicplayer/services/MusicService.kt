@@ -273,14 +273,14 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             0 -> QueueItem(-1L)
             1 -> QueueItem(mSongs.first().id)
             else -> if (isNext) {
-                val index = mSongs.indexOf(mCurrSong)
+                val index = findIndex(mCurrSong)
                 if (index != -1) {
                     QueueItem(mSongs[(index + 1) % mSongs.size].id)
                 } else {
                     queueDAO.getCurrent() ?: QueueItem(mSongs.first().id)
                 }
             } else {
-                val index = mSongs.indexOf(mCurrSong)
+                val index = findIndex(mCurrSong)
                 if (index != -1) {
                     QueueItem(mSongs[(if (index > 0) index else mSongs.size).minus(1)].id)
                 } else {
@@ -397,25 +397,26 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
         }
     }
     private fun getQueuedSongs(): MutableList<Song> {
-        val songs = ArrayList<Song>()
         val queueItems = queueDAO.getAll()
-        val allTracks = Libraries.getSortedSongs(
-            if (mCurrSong?.isOTGMode() == false) {
-                Libraries.fetchAllSongs(this, null, null)
-            } else {
-                Libraries.fetchSongsByOtg(this)
+        val lastState = settings.lastStateMode
+        val allSongs = Libraries.getSortedSongs(
+            when (lastState?.first) {
+                "OTG" -> Libraries.fetchSongsByOtg(this)
+                "ARTIST" -> Libraries.fetchSongsByArtistId(this, lastState.second)
+                "ALBUM" -> Libraries.fetchSongsByAlbumId(this, lastState.second)
+                else -> Libraries.fetchAllSongs(this, null, null)
             }
         )
+        if (queueItems.isEmpty()) return allSongs.toMutableList()
         val wantedSongs = ArrayList<Song>()
         for (wanted in queueItems) {
-            val wantedSong = allTracks.firstOrNull { it.id == wanted.songId }
+            val wantedSong = allSongs.firstOrNull { it.id == wanted.songId }
             if (wantedSong != null) {
                 wantedSongs.add(wantedSong)
                 continue
             }
         }
-        songs.addAll(wantedSongs)
-        return songs.distinctBy { it.id }.toMutableList()
+        return wantedSongs.distinctBy { it.id }.toMutableList()
     }
     private fun checkSongShuffle() {
         if (settings.isShuffleEnabled) {
@@ -491,7 +492,7 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, song.album)
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration.toLong())
-            .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, (findIndex() + 1).toLong())
+            .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, (findIndex(song) + 1).toLong())
             .putLong(MediaMetadataCompat.METADATA_KEY_YEAR, song.year.toLong())
             .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, imageScreen)
             .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, mSongs.size.toLong())
@@ -714,6 +715,8 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
 
         fun isMusicPlayer() = mPlayer != null
         fun isPlaying() = mPlayer != null && mPlayer!!.isPlaying()
-        fun findIndex() = mSongs.indexOf(mCurrSong)
+        fun findIndex(song: Song?) = mSongs.indexOfFirst {
+            it.id == song?.id && it.albumId == song.albumId
+        }
     }
 }

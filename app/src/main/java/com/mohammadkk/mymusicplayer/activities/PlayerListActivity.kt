@@ -6,11 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.hardware.usb.UsbManager
-import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.util.AndroidRuntimeException
 import android.util.Log
 import android.util.TypedValue
@@ -34,19 +32,13 @@ import com.mohammadkk.mymusicplayer.extensions.getPrimaryColor
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
-import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
 import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.listeners.AdapterListener
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.MusicService
-import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.SubViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -55,6 +47,7 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
     private val subViewModel: SubViewModel by viewModels()
     private val mHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
     private var mPairActivity: Pair<String, Long>? = null
+    private var isIgnoredItems = false
     private var songsAdapter: SongsAdapter? = null
     private val receiverUsb = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -63,10 +56,8 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
                     Log.d("PlayerListActivity", "Usb otg connected")
                 }
                 UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                    if (MusicService.isMusicPlayer()) {
-                        sendIntent(Constant.FINISH)
-                        finish()
-                    }
+                    if (MusicService.isMusicPlayer()) sendIntent(Constant.FINISH)
+                    finish()
                 }
             }
         }
@@ -79,10 +70,10 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
         setContentView(binding.root)
         getInputMethod()
         registerUSBReceiver()
-        subViewModel.getListData().observe(this) {
-            val items = Libraries.getSortedSongs(it)
-            songsAdapter?.swapDataSet(items)
+        subViewModel.getListData().observe(this) { items ->
+            listLoader(items)
             initRefreshing(false)
+            isIgnoredItems = false
         }
         binding.swiperList.setOnRefreshListener {
             initRefreshing(true)
@@ -139,20 +130,20 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
                 binding.detailsAlbumArt.setTintStaticIcon(Color.TRANSPARENT)
                 initializeList(findId.first)
                 initializeMenu()
-                mainIdManager(findId.second, findId.first)
+                subViewModel.updateList(findId)
             }
             "ARTIST" -> {
                 binding.mainActionbar.setTitle(R.string.artist)
                 binding.detailsAlbumArt.setTintStaticIcon(getColorCompat(R.color.purple_500))
                 initializeList(findId.first)
                 initializeMenu()
-                mainIdManager(findId.second, findId.first)
+                subViewModel.updateList(findId)
             }
             "OTG" -> {
                 binding.mainActionbar.setTitle(R.string.usb_device)
                 binding.detailsAlbumArt.setTintStaticIcon(getPrimaryColor())
                 initializeList(findId.first)
-                otgUsbManager()
+                subViewModel.updateList(findId)
             }
         }
     }
@@ -237,68 +228,23 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
         binding.progressListSwiper.isIndeterminate = isDisabled
         binding.progressListSwiper.isEnabled = !isDisabled
     }
-    private fun mainIdManager(id: Long, mode: String) {
-        val errorRes = when (mode) {
+    private fun listLoader(songs: List<Song>) {
+        val errorRes = when (getPairActivity()?.first) {
             "ALBUM" -> R.drawable.ic_album
-            else -> R.drawable.ic_artist
+            "ARTIST" -> R.drawable.ic_artist
+            else -> R.drawable.ic_audiotrack
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            val songs = Libraries.getSortedSongs(
-                if (mode == "ALBUM") {
-                    Libraries.fetchSongsByAlbumId(this@PlayerListActivity, id)
-                } else {
-                    Libraries.fetchSongsByArtistId(this@PlayerListActivity, id)
-                }
-            )
-            val currentSong = songs.firstOrNull() ?: Song.emptySong
-            val duration = songs.sumOf { it.duration }
-            withContext(Dispatchers.Main) {
-                binding.detailsAlbumArt.bind(currentSong, errorRes)
-                binding.detailsListTracks.text = resources.getQuantityString(
-                    R.plurals.songs_plural, songs.size, songs.size
-                )
-                binding.detailsAlbumArtist.text = getString(
-                    R.string.album_artist_symbol, currentSong.album, currentSong.artist
-                )
-                binding.detailsAlbumYear.text = currentSong.year.toLocaleYear()
-                binding.detailsListDuration.text = duration.toFormattedDuration(false)
-                subViewModel.updateList(songs)
-            }
-        }
-    }
-    private fun otgUsbManager() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val songs = Libraries.getSortedSongs(Libraries.fetchSongsByOtg(this@PlayerListActivity))
-            val song = getOtgMetadata(songs.firstOrNull() ?: Song.emptySong)
-            withContext(Dispatchers.Main) {
-                binding.detailsAlbumArt.bind(song)
-                binding.detailsListTracks.text = resources.getQuantityString(
-                    R.plurals.songs_plural, songs.size, songs.size
-                )
-                binding.detailsAlbumArtist.text = getString(
-                    R.string.album_artist_symbol, song.album, song.title
-                )
-                binding.detailsAlbumYear.text = song.year.toLocaleYear()
-                binding.detailsListDuration.text = song.duration.toFormattedDuration(false)
-                subViewModel.updateList(songs)
-            }
-        }
-    }
-    private fun getOtgMetadata(song: Song): Song {
-        val mmr = MediaMetadataRetriever()
-        try {
-            mmr.setDataSource(this, song.toContentUri())
-            val mSong = song.copy(
-                title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: MediaStore.UNKNOWN_STRING,
-                album = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: MediaStore.UNKNOWN_STRING,
-                year = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)?.toIntOrNull() ?: 0,
-                duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toIntOrNull() ?: 0
-            )
-            mmr.release()
-            return mSong
-        } catch (e: Exception) {
-            return song
-        }
+        if (!isIgnoredItems) songsAdapter?.swapDataSet(songs)
+        val currentSong = subViewModel.getCurrentSong()
+        binding.detailsAlbumArt.bind(currentSong, errorRes)
+        binding.detailsListTracks.text = resources.getQuantityString(
+            R.plurals.songs_plural, songs.size, songs.size
+        )
+        binding.detailsAlbumArtist.text = getString(
+            R.string.album_artist_symbol, currentSong.album, currentSong.artist
+        )
+        binding.detailsAlbumYear.text = currentSong.year.toLocaleYear()
+        binding.detailsListDuration.text = subViewModel.getDuration().toFormattedDuration(false)
     }
     private fun getActionBarHeight(): Int {
         val mHeight = if (theme != null) {
@@ -311,14 +257,15 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
         return mHeight + resources.getDimensionPixelSize(R.dimen.spacing_small)
     }
     override fun onReloadLibrary(mode: String?) {
-        if (mode == Constant.SONG_ID) {
-            val findId = getPairActivity()
-            when (findId?.first) {
-                "ALBUM" -> mainIdManager(findId.second, findId.first)
-                "ARTIST" -> mainIdManager(findId.second, findId.first)
-                "OTG" -> otgUsbManager()
+        getPairActivity()?.let { pair ->
+            if (mode == Constant.SONG_ID) {
+                subViewModel.updateList(pair)
+            } else {
+                isIgnoredItems = true
+                songsAdapter?.swapDeleted()
+                subViewModel.updateList(pair)
             }
-        } else songsAdapter?.swapDeleted()
+        }
         if (MusicService.isMusicPlayer()) sendIntent(Constant.REFRESH_LIST)
     }
     override fun onResume() {

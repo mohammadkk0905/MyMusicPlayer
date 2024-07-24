@@ -23,6 +23,7 @@ import com.mohammadkk.mymusicplayer.ui.drawables.PopupBackground
 import me.zhanghai.android.fastscroll.FastScroller
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
 import me.zhanghai.android.fastscroll.PopupStyles
+import me.zhanghai.android.fastscroll.PopupTextProvider
 
 fun ViewPager2.reduceDragSensitivity() {
     try {
@@ -37,17 +38,18 @@ fun ViewPager2.reduceDragSensitivity() {
         Log.e("MainActivity", e.stackTraceToString())
     }
 }
-fun RecyclerView.createFastScroll(): FastScroller {
+fun RecyclerView.createFastScroll(callback: PopupTextProvider? = null): FastScroller {
     val ctx = context
     val textColor = ctx.getColorCompat(R.color.main_bg)
-    val fastScrollerBuilder = FastScrollerBuilder(this)
-    fastScrollerBuilder.useMd2Style()
-    fastScrollerBuilder.setPopupStyle { popupText ->
+    val fsBuilder = FastScrollerBuilder(this)
+    fsBuilder.useMd2Style()
+    fsBuilder.setPopupStyle { popupText ->
         PopupStyles.MD2.accept(popupText)
         popupText.background = PopupBackground(context)
         popupText.setTextColor(textColor)
     }
-    return fastScrollerBuilder.setPadding(0, 0, 0, 0).build()
+    if (callback != null) fsBuilder.setPopupTextProvider(callback)
+    return fsBuilder.setPadding(0, 0, 0, 0).build()
 }
 fun ImageView.updateIconTint(@ColorInt color: Int) {
     ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(color))

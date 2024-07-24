@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.mohammadkk.mymusicplayer.utils.PlaybackRepeat
+import org.json.JSONException
+import org.json.JSONObject
 
 class BaseSettings(app: Application) {
     private val prefs = PreferenceManager.getDefaultSharedPreferences(app.applicationContext)
@@ -57,6 +59,10 @@ class BaseSettings(app: Application) {
         get() = prefs.getInt("cover_mode", Constant.COVER_MEDIA_STORE)
         set(value) = prefs.edit { putInt("cover_mode", value) }
 
+    var lastStateMode: Pair<String, Long>?
+        get() = jsonToPairStrLong(prefs.getString("last_state_mode", null))
+        set(value) = prefs.edit { putString("last_state_mode", pairStrLongToJson(value)) }
+
     companion object {
         @Volatile
         private var INSTANCE: BaseSettings? = null
@@ -70,6 +76,22 @@ class BaseSettings(app: Application) {
         }
         fun getInstance(): BaseSettings {
             return INSTANCE ?: error("Not initialize settings!")
+        }
+        fun jsonToPairStrLong(json: String?): Pair<String, Long>? {
+            if (json == null) return null
+            return try {
+                val obj = JSONObject(json)
+                Pair(obj.getString("first"), obj.getLong("second"))
+            } catch (e: JSONException) {
+                null
+            }
+        }
+        fun pairStrLongToJson(pair: Pair<String, Long>?): String? {
+            if (pair == null) return null
+            val obj = JSONObject()
+            obj.put("first", pair.first)
+            obj.put("second", pair.second)
+            return obj.toString()
         }
     }
 }

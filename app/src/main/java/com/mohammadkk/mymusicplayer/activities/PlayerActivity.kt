@@ -93,7 +93,7 @@ class PlayerActivity : AppCompatActivity() {
         binding.playbackArtist.text = song.artist
         binding.playbackCount.text = String.format(
             Locale.getDefault(), "%d / %d",
-            MusicService.findIndex().plus(1),
+            MusicService.findIndex(song).plus(1),
             MusicService.mSongs.size
         )
         binding.playbackSeekBar.durationMills = song.duration

@@ -26,9 +26,10 @@ import java.io.File
 class ScanMediaFoldersDialog : DialogFragment() {
     private var initialPath: String = ""
     private var parentFolder: File? = null
-    private var parentContent: Array<File>? = null
+    private var parentContent: List<File>? = null
     private var rootAdapter: ScanAdapter? = null
     private var canGoUp = false
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         if (!requireContext().hasPermission(Constant.STORAGE_PERMISSION)) {
             return MaterialAlertDialogBuilder(requireContext())
@@ -54,8 +55,8 @@ class ScanMediaFoldersDialog : DialogFragment() {
             .setView(binding.root)
             .setPositiveButton(R.string.directory_scan) { _, _ ->
                 val absolutePath = parentFolder?.absolutePath
-                if (requireActivity().hasNotificationApi() && absolutePath != null) {
-                    (activity as? BaseActivity)?.apply {
+                (activity as? BaseActivity)?.run {
+                    if (hasNotificationApi() && absolutePath != null) {
                         val serviceIntent = Intent(this, ScannerService::class.java)
                         serviceIntent.putExtra(AudioColumns.DATA, absolutePath)
                         serviceIntent.action = Constant.SCANNER
@@ -77,23 +78,21 @@ class ScanMediaFoldersDialog : DialogFragment() {
     private fun selectionDirectory(i: Int) {
         if (canGoUp && i == 0) {
             if (parentFolder?.absolutePath == initialPath) {
-                val items = FileUtils.listRoots()
-                parentContent = items.map { it.file }.toTypedArray()
+                canGoUp = false
+                parentContent = getListStorages()
                 val baseDialog = dialog as AlertDialog
                 baseDialog.setTitle("Root Storage")
                 rootAdapter?.reload()
-                canGoUp = true
                 return
             }
             parentFolder = parentFolder?.parentFile
             val countSlash = parentFolder?.absolutePath?.count { it == '/' } ?: 0
             if (countSlash <= 1) {
-                val items = FileUtils.listRoots()
-                parentContent = items.map { it.file }.toTypedArray()
+                canGoUp = false
+                parentContent = getListStorages()
                 val baseDialog = dialog as AlertDialog
                 baseDialog.setTitle("Root Storage")
                 rootAdapter?.reload()
-                canGoUp = true
                 return
             }
         } else {
@@ -112,7 +111,7 @@ class ScanMediaFoldersDialog : DialogFragment() {
         super.onSaveInstanceState(outState)
         outState.putString("current_path", parentFolder?.absolutePath ?: initialPath)
     }
-    private fun listFiles(): Array<File>? {
+    private fun listFiles(): List<File>? {
         val results = arrayListOf<File>()
         parentFolder?.listFiles()?.forEach { fi ->
             if (fi.isDirectory && !fi.isHidden) {
@@ -120,25 +119,28 @@ class ScanMediaFoldersDialog : DialogFragment() {
             }
         }
         if (results.isNotEmpty()) {
-            results.sortBy { it.name.lowercase() }
-            return results.toTypedArray()
+            return results.sortedWith { o1, o2 ->
+                o1.name.compareTo(o2.name, true)
+            }
         }
         return null
     }
-    private fun getContentsArray(): Array<String?> {
-        if (parentContent == null) {
-            if (canGoUp) return arrayOf("..")
-            return arrayOf()
+    private fun getListStorages(): List<File> {
+        val distance = HashSet<String>()
+        val result = ArrayList<File>()
+        FileUtils.listRoots().forEach { f ->
+            if (distance.add(f.second.absolutePath))
+                result.add(f.second)
         }
-        val baseSize = if (canGoUp) 1 else 0
-        val results = arrayOfNulls<String>(parentContent!!.size + baseSize)
-        if (canGoUp) results[0] = ".."
-        for (i in 0 until parentContent!!.size) {
-            results[i + baseSize] = parentContent!![i].name
-        }
+        return result
+    }
+    private fun getContentsArray(): List<String?> {
+        val results = arrayListOf<String?>()
+        if (canGoUp) results.add("..")
+        parentContent?.forEach { f -> results.add(f.name) }
         return results
     }
-    private inner class ScanAdapter(private var items: Array<String?>) : RecyclerView.Adapter<ScanAdapter.ViewHolder>() {
+    private inner class ScanAdapter(private var items: List<String?>) : RecyclerView.Adapter<ScanAdapter.ViewHolder>() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
             return ViewHolder(inflater.inflate(R.layout.list_scan_dialog, parent, false))
