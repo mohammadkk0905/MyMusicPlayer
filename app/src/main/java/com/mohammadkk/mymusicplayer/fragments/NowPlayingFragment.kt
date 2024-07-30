@@ -12,8 +12,10 @@ import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
+import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
+import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.services.MusicService.Companion.isGlobalPlayAnim
@@ -61,7 +63,7 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
         }
     }
     private fun initSongInfo(song: Song) {
-        binding.trackImage.bind(song)
+        binding.trackImage.bind(song, R.drawable.ic_audiotrack)
         binding.tvTrackTitle.text = song.title
         binding.tvTrackSubtitle.text = getString(R.string.album_artist_symbol, song.album, song.artist)
         binding.songProgress.max = song.duration / 1000
@@ -81,7 +83,8 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
     }
     private fun onSongChanged(song: Song?) {
         if (song == null) {
-            binding.trackImage.setStaticIcon(R.drawable.ic_audiotrack)
+            val cover = GlideExtensions.getCoverArt(requireContext(), -1L, R.drawable.ic_audiotrack)
+            binding.trackImage.setImageDrawable(cover)
             binding.tvTrackTitle.text = MediaStore.UNKNOWN_STRING
             binding.tvTrackSubtitle.text = MediaStore.UNKNOWN_STRING
         } else {

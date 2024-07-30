@@ -4,6 +4,8 @@ import android.Manifest
 import android.os.Build
 import android.os.Looper
 import androidx.annotation.ChecksSdkIntAtLeast
+import org.json.JSONException
+import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -72,6 +74,22 @@ object Constant {
             }.start()
         } else {
             callback()
+        }
+    }
+    fun pairStateToJson(pair: Pair<String, Long>?): String? {
+        if (pair == null) return null
+        val jsObject = JSONObject()
+        jsObject.put("first", pair.first)
+        jsObject.put("second", pair.second)
+        return jsObject.toString()
+    }
+    fun jsonToPairState(json: String?): Pair<String, Long>? {
+        if (json == null) return null
+        return try {
+            val jsObject = JSONObject(json)
+            Pair( jsObject.getString("first"), jsObject.getLong("second"))
+        } catch (e: JSONException) {
+            null
         }
     }
     fun isOnMainThread() = Looper.myLooper() == Looper.getMainLooper()

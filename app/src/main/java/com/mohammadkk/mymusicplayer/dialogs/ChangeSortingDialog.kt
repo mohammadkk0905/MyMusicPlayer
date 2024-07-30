@@ -13,11 +13,11 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.activities.BaseActivity
 import com.mohammadkk.mymusicplayer.databinding.DialogSortSheetBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemSortModeBinding
 import com.mohammadkk.mymusicplayer.extensions.applyFullHeightDialog
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
-import com.mohammadkk.mymusicplayer.listeners.AdapterListener
 import kotlin.math.abs
 
 class ChangeSortingDialog : BottomSheetDialogFragment() {
@@ -25,7 +25,7 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
     private val sortItems = mutableListOf<Pair<Int, Int>>()
     private val settings = BaseSettings.getInstance()
     private var modeDialog = Constant.SONG_ID
-    private var adapterController: AdapterListener? = null
+    private var baseActivity: BaseActivity? = null
     private var mSortOrder = 1
     private var selectedPosition = 0
     private var isDescendingSort = false
@@ -34,7 +34,7 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         super.onAttach(context)
         modeDialog = arguments?.getString("change_sort_mode") ?: Constant.SONG_ID
         try {
-            adapterController = activity as AdapterListener
+            baseActivity = activity as BaseActivity
         } catch (e: ClassCastException) {
             e.printStackTrace()
         }
@@ -147,7 +147,7 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
                     Constant.ALBUM_ID -> settings.albumsSorting = sortName
                     Constant.ARTIST_ID -> settings.artistsSorting = sortName
                 }
-                adapterController?.onReloadLibrary(modeDialog)
+                baseActivity?.onReloadLibrary(modeDialog)
                 dismiss()
             }
         }

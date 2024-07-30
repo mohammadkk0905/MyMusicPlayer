@@ -11,27 +11,19 @@
         android:id="@+id/content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/image_container"
-            style="@style/DefaultCardViewStyle.Circle"
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/image"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_margin="2dp"
-            app:cardUseCompatPadding="true"
+            android:background="@color/cover_bg"
+            android:scaleType="centerCrop"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-            <com.mohammadkk.mymusicplayer.ui.MusicImageView
-                android:id="@+id/image"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/songs"
-                android:scaleType="centerCrop"
-                app:backgroundColor="@color/grey_300"
-                app:tintStaticIcon="@color/purple_500"
-                tools:srcCompat="@tools:sample/backgrounds/scenic" />
-        </com.google.android.material.card.MaterialCardView>
+            app:layout_constraintTop_toTopOf="parent"
+            app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
+            tools:srcCompat="@tools:sample/backgrounds/scenic" />
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/checkbox"
             android:layout_width="32dp"
@@ -43,8 +35,8 @@
             android:focusable="false"
             android:scaleType="center"
             android:visibility="invisible"
-            app:layout_constraintEnd_toEndOf="@id/image_container"
-            app:layout_constraintTop_toTopOf="@+id/image_container"
+            app:layout_constraintEnd_toEndOf="@id/image"
+            app:layout_constraintTop_toTopOf="@+id/image"
             app:srcCompat="@drawable/ic_check_circle" />
         <LinearLayout
             android:id="@+id/title_container"
@@ -56,7 +48,7 @@
             android:paddingVertical="@dimen/spacing_small"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/image_container">
+            app:layout_constraintTop_toBottomOf="@+id/image">
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/tv_title"
                 android:layout_width="wrap_content"

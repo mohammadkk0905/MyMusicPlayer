@@ -14,18 +14,15 @@ import androidx.fragment.app.FragmentManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.BaseActivity
-import com.mohammadkk.mymusicplayer.listeners.AdapterListener
 import com.mohammadkk.mymusicplayer.models.Song
 import java.util.Locale
 
 class DeleteSongsDialog : DialogFragment() {
     private var baseActivity: BaseActivity? = null
-    private var listener: AdapterListener? = null
     override fun onAttach(context: Context) {
         super.onAttach(context)
         try {
             baseActivity = activity as BaseActivity
-            listener = activity as AdapterListener
         } catch (e: ClassCastException) {
             e.printStackTrace()
         }
@@ -72,7 +69,7 @@ class DeleteSongsDialog : DialogFragment() {
             .setCancelable(false)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 baseActivity?.deleteSongs(dataset) {
-                    listener?.onReloadLibrary(null)
+                    baseActivity?.onReloadLibrary(null)
                 }
                 dismiss()
             }

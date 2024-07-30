@@ -5,12 +5,14 @@ import static android.os.Environment.getExternalStorageDirectory;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 

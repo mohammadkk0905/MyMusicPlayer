@@ -15,6 +15,7 @@ import com.mohammadkk.mymusicplayer.activities.BaseActivity
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.ItemListBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
+import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
 import com.mohammadkk.mymusicplayer.extensions.resetQueueItems
@@ -86,7 +87,7 @@ class SongsAdapter(
                 (context as? BaseActivity)?.isFadeAnimation = false
             }
             baseSettings.lastStateMode = Pair(mode, when (mode) {
-                "ARTIST" -> song.albumId
+                "ARTIST" -> song.artistId
                 "ALBUM" -> song.albumId
                 else -> song.id
             })
@@ -143,7 +144,7 @@ class SongsAdapter(
                 } else {
                     song.dateAdded.toFormattedDate()
                 }
-                image.bind(song)
+                image.bind(song, R.drawable.ic_audiotrack)
                 root.setOnClickListener {
                     if (isInQuickSelectMode) {
                         toggleChecked(absoluteAdapterPosition)

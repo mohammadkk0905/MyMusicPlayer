@@ -7,18 +7,17 @@
     android:layout_height="?attr/actionBarSize"
     android:background="?attr/selectableItemBackground">
 
-    <com.mohammadkk.mymusicplayer.ui.MusicImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/trackImage"
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:layout_marginStart="@dimen/spacing_small"
+        android:background="@color/cover_bg"
         android:scaleType="centerCrop"
-        app:backgroundColor="@color/grey_300"
-        app:cornerRadius="@dimen/spacing_small"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tintStaticIcon="?attr/colorPrimary"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.MediumComponent"
         tools:srcCompat="@tools:sample/backgrounds/scenic" />
     
     <TextView

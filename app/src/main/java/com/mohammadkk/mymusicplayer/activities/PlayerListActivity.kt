@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Color
 import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.os.Handler
@@ -27,22 +26,21 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerListBinding
 import com.mohammadkk.mymusicplayer.dialogs.ChangeSortingDialog
-import com.mohammadkk.mymusicplayer.extensions.getColorCompat
-import com.mohammadkk.mymusicplayer.extensions.getPrimaryColor
+import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
 import com.mohammadkk.mymusicplayer.extensions.toast
-import com.mohammadkk.mymusicplayer.listeners.AdapterListener
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.MusicService
+import com.mohammadkk.mymusicplayer.services.PlaybackStateManager
 import com.mohammadkk.mymusicplayer.viewmodels.SubViewModel
 import kotlin.math.abs
 import kotlin.random.Random
 
-class PlayerListActivity : BaseActivity(), AdapterListener {
+class PlayerListActivity : BaseActivity() {
     private lateinit var binding: ActivityPlayerListBinding
     private val subViewModel: SubViewModel by viewModels()
     private val mHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
@@ -101,7 +99,6 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
         }
     }
     private fun getInputMethod() {
-        binding.detailsAlbumArt.background.alpha = 70
         val metrics = resources.displayMetrics
         val size = (metrics.density * 196).toInt()
         val width = metrics.widthPixels
@@ -127,21 +124,18 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
         when (findId?.first) {
             "ALBUM" -> {
                 binding.mainActionbar.setTitle(R.string.album)
-                binding.detailsAlbumArt.setTintStaticIcon(Color.TRANSPARENT)
                 initializeList(findId.first)
                 initializeMenu()
                 subViewModel.updateList(findId)
             }
             "ARTIST" -> {
                 binding.mainActionbar.setTitle(R.string.artist)
-                binding.detailsAlbumArt.setTintStaticIcon(getColorCompat(R.color.purple_500))
                 initializeList(findId.first)
                 initializeMenu()
                 subViewModel.updateList(findId)
             }
             "OTG" -> {
                 binding.mainActionbar.setTitle(R.string.usb_device)
-                binding.detailsAlbumArt.setTintStaticIcon(getPrimaryColor())
                 initializeList(findId.first)
                 subViewModel.updateList(findId)
             }
@@ -265,6 +259,7 @@ class PlayerListActivity : BaseActivity(), AdapterListener {
                 songsAdapter?.swapDeleted()
                 subViewModel.updateList(pair)
             }
+            PlaybackStateManager.getInstance().onReloadLibraries()
         }
         if (MusicService.isMusicPlayer()) sendIntent(Constant.REFRESH_LIST)
     }

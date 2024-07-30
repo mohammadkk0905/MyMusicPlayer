@@ -13,7 +13,6 @@ import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.toast
-import com.mohammadkk.mymusicplayer.listeners.AdapterListener
 import com.mohammadkk.mymusicplayer.utils.FileUtils
 import com.mohammadkk.mymusicplayer.utils.NotificationUtils
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +30,6 @@ class ScannerService : Service() {
     private val indexScope = CoroutineScope(serviceJob + Dispatchers.IO)
     private var currentPath = ""
     private var isForegroundService = false
-    var listener: AdapterListener? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -41,7 +39,6 @@ class ScannerService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isForegroundService = false
-        listener = null
         serviceJob.cancel()
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -88,16 +85,16 @@ class ScannerService : Service() {
             toast(R.string.nothing_to_scan)
             stopForegroundOrNotification()
             stopSelf()
-            listener?.onDestroyService()
+            isForegroundService = false
         } else {
             var cnt = toBeScanned.size
             MediaScannerConnection.scanFile(applicationContext, toBeScanned, null) { _, _ ->
                 if (--cnt == 0) {
                     toast(getString(R.string.scann_message, toBeScanned.size))
-                    listener?.onReloadLibrary(null)
+                    PlaybackStateManager.getInstance().onReloadLibraries()
                     stopForegroundOrNotification()
                     stopSelf()
-                    listener?.onDestroyService()
+                    isForegroundService = false
                 }
             }
         }

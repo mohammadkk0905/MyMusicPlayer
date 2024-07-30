@@ -1,13 +1,10 @@
 package com.mohammadkk.mymusicplayer.activities
 
 import android.app.Activity
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.provider.Settings
 import android.view.Menu
 import android.view.MenuItem
@@ -46,29 +43,15 @@ import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.fragments.AlbumsFragment
 import com.mohammadkk.mymusicplayer.fragments.ArtistsFragment
 import com.mohammadkk.mymusicplayer.fragments.SongsFragment
-import com.mohammadkk.mymusicplayer.listeners.AdapterListener
 import com.mohammadkk.mymusicplayer.services.MusicService
-import com.mohammadkk.mymusicplayer.services.ScannerService
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.max
 import kotlin.math.min
 
-class MainActivity : BaseActivity(), AdapterListener {
+class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
     private val musicViewModel: MusicViewModel by viewModels()
     private var safIntentLauncher: ActivityResultLauncher<Intent>? = null
-    private var isBoundService = false
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val localService = service as ScannerService.LocalScanner
-            val scannerService = localService.instance
-            scannerService.listener = this@MainActivity
-            isBoundService = true
-        }
-        override fun onServiceDisconnected(name: ComponentName?) {
-            isBoundService = false
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -320,12 +303,6 @@ class MainActivity : BaseActivity(), AdapterListener {
             }
         }
     }
-    override fun onDestroyService() {
-        if (isBoundService) {
-            unbindService(connection)
-            isBoundService = false
-        }
-    }
     override fun onReloadLibrary(mode: String?) {
         if (mode == null) {
             musicViewModel.updateLibraries()
@@ -338,13 +315,6 @@ class MainActivity : BaseActivity(), AdapterListener {
         }
         if (MusicService.isMusicPlayer()) {
             sendIntent(Constant.REFRESH_LIST)
-        }
-    }
-    override fun onBindService() {
-        if (!isBoundService) {
-            Intent(this, ScannerService::class.java).also {
-                bindService(it, connection, BIND_AUTO_CREATE)
-            }
         }
     }
     private class SlidePagerAdapter(fm: FragmentManager, le: Lifecycle) : FragmentStateAdapter(fm, le) {

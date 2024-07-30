@@ -29,8 +29,7 @@ import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.database.SongsDatabase
-import com.mohammadkk.mymusicplayer.extensions.getAlbumArt
-import com.mohammadkk.mymusicplayer.extensions.getTrackArt
+import com.mohammadkk.mymusicplayer.extensions.getCoverArt
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.queueDAO
 import com.mohammadkk.mymusicplayer.extensions.toContentUri
@@ -526,13 +525,9 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
         if (mPlaceholder == null) {
             mPlaceholder = BitmapFactory.decodeResource(resources, R.drawable.ic_start_music)
         }
-        val mContext = baseContext ?: applicationContext
-        val coverResolver = when (settings.coverMode) {
-            Constant.COVER_OFF -> return null
-            Constant.COVER_MEDIA_STORE -> mCurrSong?.getAlbumArt(mContext)
-            else -> mCurrSong?.getTrackArt(mContext)
-        }
-        if (coverResolver == null) {
+        if (settings.coverMode == Constant.COVER_OFF) return null
+        val coverArt = mCurrSong?.getCoverArt(this, settings.coverMode)
+        if (coverArt == null) {
             if (Constant.isQPlus()) {
                 if (mCurrSong?.path?.startsWith("content://") == true) {
                     try {
@@ -543,7 +538,7 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
                 }
             }
         }
-        return coverResolver
+        return coverArt
     }
     private fun destroyPlayer() {
         saveSongProgress()

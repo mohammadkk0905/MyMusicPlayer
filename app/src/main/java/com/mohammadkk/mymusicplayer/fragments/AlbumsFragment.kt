@@ -22,6 +22,7 @@ import com.mohammadkk.mymusicplayer.adapters.AbsMultiAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemGridBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
+import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
 import com.mohammadkk.mymusicplayer.extensions.createFastScroll
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
@@ -177,7 +178,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
                     text.text = context.resources.getQuantityString(
                         R.plurals.songs_plural, album.trackCount, album.trackCount
                     )
-                    image.bind(album)
+                    image.bind(album.getSafeSong(), R.drawable.ic_album)
                     root.setOnClickListener {
                         if (isInQuickSelectMode) {
                             toggleChecked(absoluteAdapterPosition)

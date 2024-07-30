@@ -25,8 +25,8 @@
             app:title="@string/playing"
             app:titleCentered="true" />
     </androidx.cardview.widget.CardView>
-    
-    <com.mohammadkk.mymusicplayer.ui.MusicImageView
+
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/playback_cover"
         style="@style/Widget.Audio.Image.Full"
         android:layout_margin="@dimen/spacing_medium"

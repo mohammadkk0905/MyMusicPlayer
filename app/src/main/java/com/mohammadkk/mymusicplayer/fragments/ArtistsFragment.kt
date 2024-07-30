@@ -22,6 +22,7 @@ import com.mohammadkk.mymusicplayer.adapters.AbsMultiAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemGridArtistBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
+import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
 import com.mohammadkk.mymusicplayer.extensions.createFastScroll
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
@@ -174,7 +175,7 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuer
                     tvText.text = context.getString(
                         R.string.artists_symbol, artist.albumCount, artist.trackCount
                     )
-                    image.bind(artist)
+                    image.bind(artist.getSafeSong(), R.drawable.ic_artist)
                     root.setOnClickListener {
                         if (isInQuickSelectMode) {
                             toggleChecked(absoluteAdapterPosition)

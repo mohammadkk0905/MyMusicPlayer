@@ -33,16 +33,16 @@
                     android:clipToPadding="false"
                     android:padding="@dimen/spacing_mid_medium"
                     app:layout_collapseMode="parallax">
-                    <com.mohammadkk.mymusicplayer.ui.MusicImageView
+                    <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/detailsAlbumArt"
                         android:layout_width="196dp"
                         android:layout_height="196dp"
+                        android:background="@color/cover_bg"
                         android:scaleType="centerCrop"
-                        app:backgroundColor="?attr/colorPrimary"
-                        app:cornerRadius="@dimen/spacing_small"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.MediumComponent" />
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/detailsListTracks"
                         android:layout_width="wrap_content"

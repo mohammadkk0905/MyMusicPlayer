@@ -102,7 +102,7 @@ abstract class BaseActivity : AppCompatActivity() {
     private fun isExternalStorageDocument(uri: Uri): Boolean {
         return Constant.EXTERNAL_STORAGE_AUTHORITY == uri.authority
     }
-    open fun onBindService() {
+    open fun onReloadLibrary(mode: String?) {
     }
     companion object {
         private var mAfterSdk30Action: ((success: Boolean) -> Unit)? = null

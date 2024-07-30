@@ -9,6 +9,7 @@ import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerBinding
+import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.errorToast
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.getPrimaryColor
@@ -87,7 +88,7 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
     private fun initializeSongInfo(song: Song) {
-        binding.playbackCover.bind(song)
+        binding.playbackCover.bind(song, R.drawable.ic_audiotrack)
         binding.playbackSong.text = song.title
         binding.playbackAlbum.text = song.album
         binding.playbackArtist.text = song.artist

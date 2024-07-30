@@ -12,13 +12,18 @@ import android.view.MenuItem
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.annotation.ColorInt
+import androidx.annotation.DrawableRes
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.image.GlideExtensions
+import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
+import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.ui.drawables.PopupBackground
 import me.zhanghai.android.fastscroll.FastScroller
 import me.zhanghai.android.fastscroll.FastScrollerBuilder
@@ -67,6 +72,19 @@ fun ImageView.updatePlayingState(isPlaying: Boolean, isAnimation: Boolean) {
         } else {
             setImageResource(defaultIcon)
         }
+    }
+}
+fun ImageView.bind(song: Song, @DrawableRes placeholder: Int) {
+    val songModel = GlideExtensions.getSongModel(song)
+    val coverPlaceholder = GlideExtensions.getCoverArt(context, song.id, placeholder)
+    if (songModel == null) {
+        setImageDrawable(coverPlaceholder)
+    } else {
+        Glide.with(context)
+            .asBitmap()
+            .getCoverOptions(song, coverPlaceholder)
+            .load(songModel)
+            .into(this)
     }
 }
 fun Dialog?.applyFullHeightDialog(activity: Activity) {

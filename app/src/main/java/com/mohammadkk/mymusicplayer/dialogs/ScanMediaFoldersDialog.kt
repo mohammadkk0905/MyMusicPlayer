@@ -61,7 +61,6 @@ class ScanMediaFoldersDialog : DialogFragment() {
                         serviceIntent.putExtra(AudioColumns.DATA, absolutePath)
                         serviceIntent.action = Constant.SCANNER
                         try {
-                            onBindService()
                             startService(serviceIntent)
                         } catch (e: Exception) {
                             errorToast(e)

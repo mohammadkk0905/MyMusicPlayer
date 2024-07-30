@@ -1,6 +1,7 @@
 package com.mohammadkk.mymusicplayer.extensions
 
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,7 +12,6 @@ import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.mohammadkk.mymusicplayer.Constant
-import com.mohammadkk.mymusicplayer.image.AudioFileCover
 import com.mohammadkk.mymusicplayer.models.Song
 import java.io.File
 import java.text.SimpleDateFormat
@@ -81,35 +81,32 @@ fun Song.toProviderUri(context: Context): Uri {
         }
     }
 }
-fun Song.toCoverArt(mode: Int): Any? {
+fun Song.getCoverArt(context: Context, mode: Int): Bitmap? {
     return when (mode) {
         Constant.COVER_OFF -> return null
         Constant.COVER_MEDIA_STORE -> if (!isOTGMode()) {
-            albumId.toAlbumArtURI()
+           getAlbumArt(context.contentResolver, albumId)
         } else {
-            AudioFileCover(path, albumId)
+            getTrackArt(context, toContentUri())
         }
-        else -> AudioFileCover(if (!isOTGMode()) path else toContentUri().toString(), albumId)
+        else -> getTrackArt(context, toContentUri())
     }
 }
-fun Song.getTrackArt(context: Context): Bitmap? {
+private fun getTrackArt(context: Context, uri: Uri): Bitmap? {
     val mmr = MediaMetadataRetriever()
     return try {
-        mmr.setDataSource(context, toContentUri())
+        mmr.setDataSource(context, uri)
         val art = mmr.embeddedPicture
         mmr.release()
-        if (art == null) return null
-        BitmapFactory.decodeByteArray(art, 0, art.size, BitmapFactory.Options())
+        art?.let { BitmapFactory.decodeByteArray(it, 0, it.size, BitmapFactory.Options()) }
     } catch (e: Exception) {
         null
     }
 }
-fun Song.getAlbumArt(context: Context): Bitmap? {
+private fun getAlbumArt(resolver: ContentResolver, albumId: Long): Bitmap? {
     return try {
-        val fd = context.contentResolver.openFileDescriptor(albumId.toAlbumArtURI(), "r") ?: return null
-        val bitmap = BitmapFactory.decodeFileDescriptor(fd.fileDescriptor)
-        fd.close()
-        bitmap
+        val fd = resolver.openFileDescriptor(albumId.toAlbumArtURI(), "r") ?: return null
+        BitmapFactory.decodeFileDescriptor(fd.fileDescriptor).also { fd.close() }
     } catch (e: Exception) {
         null
     }

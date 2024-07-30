@@ -4,11 +4,13 @@ import android.app.Application
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.models.Album
 import com.mohammadkk.mymusicplayer.models.Artist
 import com.mohammadkk.mymusicplayer.models.Song
+import com.mohammadkk.mymusicplayer.services.PlaybackStateManager
 import com.mohammadkk.mymusicplayer.utils.Libraries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
@@ -19,10 +21,11 @@ import kotlinx.coroutines.withContext
 import java.text.Collator
 import kotlin.math.abs
 
-class MusicViewModel(application: Application) : AndroidViewModel(application) {
+class MusicViewModel(application: Application) : AndroidViewModel(application), OnRefreshListener {
     private val context: Application get() = getApplication()
     private val settings = BaseSettings.getInstance()
     val fragmentLibraries = hashMapOf<Int, SearchView.OnQueryTextListener?>()
+    private var isReloadLibrariesCallback = false
 
     private val _songsList = MutableStateFlow(listOf<Song>())
     val songsList: StateFlow<List<Song>> get() = _songsList
@@ -33,6 +36,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _artistsList = MutableStateFlow(listOf<Artist>())
     val artistsList: StateFlow<List<Artist>> get() = _artistsList
 
+    init {
+        PlaybackStateManager.getInstance().addReload(this)
+    }
     fun updateLibraries() = viewModelScope.launch(IO) {
         val songs = getAllSongs(true)
         val albums = getAllAlbums(songs)
@@ -41,31 +47,34 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             _songsList.value = songs
             _albumsList.value = albums
             _artistsList.value = artist
+            isReloadLibrariesCallback = false
         }
     }
-    fun reloadLibraries() {
-        viewModelScope.launch(IO) {
-            _songsList.tryEmit(songsList.value)
-            _albumsList.tryEmit(albumsList.value)
-            _artistsList.tryEmit(artistsList.value)
+    override fun onRefresh() {
+        if (!isReloadLibrariesCallback) {
+            isReloadLibrariesCallback = true
+            updateLibraries()
         }
     }
     private suspend fun fetchSongs() {
         val songs = getAllSongs(true)
         withContext(Dispatchers.Main) {
             _songsList.value = songs
+            isReloadLibrariesCallback = false
         }
     }
     private suspend fun fetchAlbums() {
         val albums = getAllAlbums(getAllSongs(false))
         withContext(Dispatchers.Main) {
             _albumsList.value = albums
+            isReloadLibrariesCallback = false
         }
     }
     private suspend fun fetchArtists() {
         val artists = getAllArtists(getAllSongs(false))
         withContext(Dispatchers.Main) {
             _artistsList.value = artists
+            isReloadLibrariesCallback = false
         }
     }
     private fun getAllSongs(isSorting: Boolean): List<Song> {
@@ -116,5 +125,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             1 -> fetchAlbums()
             2 -> fetchArtists()
         }
+    }
+    override fun onCleared() {
+        PlaybackStateManager.getInstance().removeReload(this)
+        super.onCleared()
     }
 }
