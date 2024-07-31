@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
@@ -24,20 +25,20 @@ import com.mohammadkk.mymusicplayer.databinding.ItemGridArtistBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
-import com.mohammadkk.mymusicplayer.extensions.createFastScroll
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Artist
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollRecyclerView
 import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
-import me.zhanghai.android.fastscroll.PopupTextProvider
 import kotlin.math.abs
 
 class ArtistsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQueryTextListener {
     private lateinit var binding: FragmentLibrariesBinding
     private val musicViewModel: MusicViewModel by activityViewModels()
+    private val baseSettings = BaseSettings.getInstance()
     private var artistsAdapter: ArtistsAdapter? = null
     private var unchangedList = listOf<Artist>()
 
@@ -53,7 +54,11 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuer
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = artistsAdapter
-            createFastScroll()
+            popupProvider = object : FastScrollRecyclerView.PopupProvider {
+                override fun getPopup(pos: Int): String {
+                    return getPopupText(pos)
+                }
+            }
         }
         collectImmediately(musicViewModel.artistsList, ::updateList)
         binding.fragRefresher.setOnRefreshListener {
@@ -72,6 +77,15 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuer
         return resources.getInteger(
             if (requireContext().isLandscape) R.integer.def_grid_columns_land else R.integer.def_grid_columns
         )
+    }
+    private fun getPopupText(position: Int): String {
+        val artist = unchangedList.getOrNull(position)
+        val result = when (abs(baseSettings.artistsSorting)) {
+            Constant.SORT_BY_TITLE -> artist?.title
+            Constant.SORT_BY_DURATION -> return artist?.duration?.toFormattedDuration(true) ?: "-"
+            else -> artist?.title
+        }
+        return Libraries.getSectionName(result, true)
     }
     override fun onQueryTextSubmit(query: String?): Boolean {
         handleSearchAdapter(query)
@@ -110,7 +124,7 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuer
     private class ArtistsAdapter(
         context: FragmentActivity,
         var dataSet: MutableList<Artist>
-    ) : AbsMultiAdapter<ArtistsAdapter.ViewHolder, Artist>(context), PopupTextProvider {
+    ) : AbsMultiAdapter<ArtistsAdapter.ViewHolder, Artist>(context) {
         private val selectedColor = context.getColorCompat(R.color.blue_primary_container)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -138,15 +152,6 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuer
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bindItems(dataSet[holder.absoluteAdapterPosition])
-        }
-        override fun getPopupText(view: View, position: Int): CharSequence {
-            val artist = dataSet.getOrNull(position)
-            val result = when (abs(baseSettings.artistsSorting)) {
-                Constant.SORT_BY_TITLE -> artist?.title
-                Constant.SORT_BY_DURATION -> return artist?.duration?.toFormattedDuration(true) ?: "-"
-                else -> artist?.title
-            }
-            return Libraries.getSectionName(result, true)
         }
         fun swapDataSet(dataSet: List<Artist>) {
             this.dataSet = ArrayList(dataSet)

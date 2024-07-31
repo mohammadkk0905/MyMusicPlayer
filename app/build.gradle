@@ -53,13 +53,14 @@ dependencies {
     implementation libs.androidx.preference.ktx
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.swiperefreshlayout
+    implementation libs.androidx.recyclerview
     implementation libs.androidx.media
     implementation libs.room.runtime
     implementation libs.room.ktx
     ksp libs.androidx.room.compiler
     implementation libs.glide
     ksp libs.glide.ksp
-    implementation libs.library
+    implementation libs.jaudiotagger
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
     androidTestImplementation libs.androidx.espresso.core

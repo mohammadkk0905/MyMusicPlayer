@@ -4,5 +4,11 @@
     <dimen name="spacing_small">8dp</dimen>
     <dimen name="spacing_mid_medium">12dp</dimen>
     <dimen name="spacing_medium">16dp</dimen>
+    <dimen name="size_btn">48dp</dimen>
     <dimen name="small_text_size">10sp</dimen>
+    <!-- Misc -->
+    <dimen name="elevation_normal">3dp</dimen>
+    <dimen name="fast_scroll_popup_min_width">78dp</dimen>
+    <dimen name="fast_scroll_popup_min_height">64dp</dimen>
+    <dimen name="fast_scroll_popup_padding_end">28dp</dimen>
 </resources>

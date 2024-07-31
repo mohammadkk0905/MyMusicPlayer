@@ -5,7 +5,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.mohammadkk.mymusicplayer.utils.PlaybackRepeat
 
-class BaseSettings(app: Application) {
+class BaseSettings(val app: Application) {
     private val prefs = PreferenceManager.getDefaultSharedPreferences(app.applicationContext)
 
     var actionModeIndex: Int = -1

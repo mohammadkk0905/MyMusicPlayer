@@ -65,6 +65,12 @@ class MusicSeekBar @JvmOverloads constructor(
             binding.sliderPosition.text = value.toInt().toFormattedDuration(true)
         }
     }
+    override fun onFinishInflate() {
+        super.onFinishInflate()
+        if (childCount == 1) {
+            getChildAt(0).layoutDirection = LAYOUT_DIRECTION_LTR
+        }
+    }
     interface Callback {
         fun onSeekTo(position: Int)
     }

@@ -1,6 +1,5 @@
 package com.mohammadkk.mymusicplayer.activities
 
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -11,14 +10,11 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityOptionsCompat
-import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
@@ -33,7 +29,6 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityMainBinding
 import com.mohammadkk.mymusicplayer.dialogs.ChangeSortingDialog
 import com.mohammadkk.mymusicplayer.dialogs.ScanMediaFoldersDialog
-import com.mohammadkk.mymusicplayer.extensions.fromTreeUri
 import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.isMassUsbDeviceConnected
@@ -51,11 +46,12 @@ import kotlin.math.min
 class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
     private val musicViewModel: MusicViewModel by viewModels()
-    private var safIntentLauncher: ActivityResultLauncher<Intent>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        onBackPressedDispatcher.addCallback(mBackPressedCallback)
+        onBackPressedDispatcher.addCallback(this, true) {
+            onBackPressedCompat()
+        }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.mainActionBar)
@@ -87,17 +83,15 @@ class MainActivity : BaseActivity() {
             }
         }
     }
-    private val mBackPressedCallback = object : OnBackPressedCallback(true) {
-        override fun handleOnBackPressed() {
-            if (adapterActionMode != null) {
-                adapterActionMode?.finish()
-                adapterActionMode = null
+    private fun onBackPressedCompat() {
+        if (adapterActionMode != null) {
+            adapterActionMode?.finish()
+            adapterActionMode = null
+        } else {
+            if (binding.mainPager.currentItem >= 1) {
+                binding.mainPager.currentItem = 0
             } else {
-                if (binding.mainPager.currentItem >= 1) {
-                    binding.mainPager.currentItem = 0
-                } else {
-                    finish()
-                }
+                finish()
             }
         }
     }
@@ -133,23 +127,6 @@ class MainActivity : BaseActivity() {
         }
     }
     private fun setupElementUi() {
-        safIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
-            if (res.resultCode == Activity.RESULT_OK && res.data?.data != null) {
-                val contentUri = res.data?.data!!
-                if (isOTGRootFolder(contentUri)) {
-                    settings.otgTreeUri = contentUri.toString()
-                    settings.otgPartition = settings.otgTreeUri.removeSuffix("%3A").substringAfterLast('/').trimEnd('/')
-                    val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    applicationContext.contentResolver.takePersistableUriPermission(contentUri, takeFlags)
-                    Intent(this, PlayerListActivity::class.java).apply {
-                        putExtra("otg", true)
-                        startActivity(this)
-                    }
-                } else {
-                    startOtgPicker()
-                }
-            }
-        }
         val adapter = SlidePagerAdapter(supportFragmentManager, lifecycle)
         binding.mainPager.offscreenPageLimit = adapter.itemCount.minus(1)
         binding.mainPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
@@ -198,14 +175,6 @@ class MainActivity : BaseActivity() {
         BaseSettings.initialize(application)
         hasNotificationApi()
     }
-    private fun startOtgPicker() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        try {
-            safIntentLauncher?.launch(intent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main_libraries, menu)
         menu?.run {
@@ -233,20 +202,11 @@ class MainActivity : BaseActivity() {
                 }
                 ChangeSortingDialog.showDialog(supportFragmentManager, sortMode)
             }
-            R.id.action_recheck_library -> {
-                val dialog = ScanMediaFoldersDialog()
-                dialog.show(supportFragmentManager, "SCAN_MEDIA_FOLDER_CHOOSER")
-            }
+            R.id.action_recheck_library -> ScanMediaFoldersDialog.create(
+                false, supportFragmentManager
+            )
             R.id.action_usb_otg -> if (isMassUsbDeviceConnected()) {
-                val otgDirectory = fromTreeUri(settings.otgTreeUri.toUri())
-                if (otgDirectory == null || !otgDirectory.exists()) {
-                    startOtgPicker()
-                } else {
-                    Intent(this, PlayerListActivity::class.java).apply {
-                        putExtra("otg", true)
-                        startActivity(this)
-                    }
-                }
+                ScanMediaFoldersDialog.create(true, supportFragmentManager)
             } else {
                 toast(R.string.usb_device_not_found)
             }

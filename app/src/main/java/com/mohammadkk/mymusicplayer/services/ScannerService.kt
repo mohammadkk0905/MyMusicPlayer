@@ -21,7 +21,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileFilter
 
 class ScannerService : Service() {
     private val myBinder: IBinder = LocalScanner()
@@ -61,7 +60,7 @@ class ScannerService : Service() {
             val mPaths = try {
                 val paths: Array<String?>
                 if (file.isDirectory) {
-                    val files = FileUtils.listFilesDeep(file, AUDIO_FILE_FILTER)
+                    val files = FileUtils.listFilesDeep(file, FileUtils.AUDIO_FILE_FILTER)
                     paths = arrayOfNulls(files.size)
                     for (i in files.indices) {
                         val f = files[i]
@@ -135,10 +134,5 @@ class ScannerService : Service() {
     }
     inner class LocalScanner : Binder() {
         val instance: ScannerService get() = this@ScannerService
-    }
-    companion object {
-        private val AUDIO_FILE_FILTER = FileFilter { file: File ->
-            !file.isHidden && (file.isDirectory || FileUtils.isAudioFile(file.path))
-        }
     }
 }

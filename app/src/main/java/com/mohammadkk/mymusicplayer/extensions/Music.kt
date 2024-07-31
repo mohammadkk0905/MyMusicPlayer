@@ -14,12 +14,12 @@ import androidx.core.net.toUri
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.models.Song
 import java.io.File
-import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 
 fun Song.toContentUri(): Uri {
-    if (!path.startsWith("content://")) {
+    if (!isOTGMode()) {
         return ContentUris.withAppendedId(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
         )
@@ -47,14 +47,11 @@ fun Int.toFormattedDuration(isSeekBar: Boolean): String {
         }
     }
 }
-fun Int.toFormattedDate(): String {
-    return try {
-        val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        val mDate = Date(this * 1000L)
-        sdf.format(mDate)
-    } catch (e: Exception) {
-        ""
-    }
+fun Int.toFormattedDate(): String = try {
+    val date = Date(this * 1000L)
+    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, Locale.getDefault()).format(date)
+} catch (e: Exception) {
+    ""
 }
 fun Int.toLocaleYear(): String {
     return if (this > 0) {

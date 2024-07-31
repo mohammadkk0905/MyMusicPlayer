@@ -2,21 +2,17 @@ package com.mohammadkk.mymusicplayer.utils;
 
 import static android.os.Environment.getExternalStorageDirectory;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Environment;
-import android.provider.DocumentsContract;
 import android.util.Log;
 import android.util.Pair;
 
-import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.mohammadkk.mymusicplayer.models.FileItem;
+import com.mohammadkk.mymusicplayer.database.SortedCursor;
+import com.mohammadkk.mymusicplayer.models.Song;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,6 +28,11 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 
 public class FileUtils {
+    public static final FileFilter AUDIO_FILE_FILTER = file -> {
+        final boolean isAudio =  FileUtils.isAudioFile(file.getPath());
+        return !file.isHidden() && (file.isDirectory() || isAudio);
+    };
+
     @NonNull
     public static ArrayList<Pair<String, File>> listRoots() {
         ArrayList<Pair<String, File>> storageItems = new ArrayList<>();
@@ -98,6 +99,17 @@ public class FileUtils {
             return file.getAbsolutePath();
         }
     }
+    @Nullable
+    private static String[] toPathArray(@Nullable List<File> files) {
+        if (files != null) {
+            String[] paths = new String[files.size()];
+            for (int i = 0; i < files.size(); i++) {
+                paths[i] = safeGetCanonicalPath(files.get(i));
+            }
+            return paths;
+        }
+        return null;
+    }
     @NonNull
     public static List<File> listFilesDeep(@NonNull File directory, @Nullable FileFilter fileFilter) {
         List<File> files = new LinkedList<>();
@@ -116,64 +128,6 @@ public class FileUtils {
             }
         }
     }
-    @NonNull
-    public static List<FileItem> listFilesDeep(@NonNull Context context, @NonNull Uri treeUri) {
-        List<FileItem> files = new LinkedList<>();
-        handleListFilesDeep(context, files, treeUri);
-        return files;
-    }
-    private static void handleListFilesDeep(@NonNull Context context, @NonNull Collection<FileItem> files, @NonNull Uri treeUri) {
-        List<FileItem> found = listFiles(context, treeUri);
-        for (FileItem file : found) {
-            if (file.isDirectory()) {
-                handleListFilesDeep(context, files, file.getContentUri());
-            } else if (isAudioFile(file.getFilename())) {
-                files.add(file);
-            }
-        }
-    }
-    private static List<FileItem> listFiles(Context context, Uri treeUri) {
-        final ContentResolver resolver = context.getContentResolver();
-        final Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri,
-                DocumentsContract.getDocumentId(treeUri));
-        final String[] projection = new String[]{
-                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                DocumentsContract.Document.COLUMN_MIME_TYPE,
-                DocumentsContract.Document.COLUMN_LAST_MODIFIED
-        };
-        final List<FileItem> results = new ArrayList<>();
-        Cursor c = null;
-        try {
-            c = resolver.query(childrenUri, projection, null, null, null);
-            if (c != null) {
-                while (c.moveToNext()) {
-                    final String documentId = c.getString(0);
-                    final Uri docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId);
-                    final String name = c.getString(1);
-                    final String mimetype = c.getString(2);
-                    final boolean isDirectory = mimetype.equals(DocumentsContract.Document.MIME_TYPE_DIR);
-                    final long modified =  c.getLong(3);
-                    results.add(new FileItem(name, isDirectory, modified, docUri));
-                }
-            }
-        } catch (Exception e) {
-            Log.w("FileUtils", "Failed query: " + e);
-        } finally {
-            closeQuietly(c);
-        }
-        return results;
-    }
-    private static void closeQuietly(@Nullable AutoCloseable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (RuntimeException rethrown) {
-                throw rethrown;
-            } catch (Exception ignored) {
-            }
-        }
-    }
     public static boolean isAudioFile(@Nullable String path) {
         if (path == null) return false;
         int dotPos = path.lastIndexOf('.');
@@ -187,11 +141,28 @@ public class FileUtils {
         }
         return false;
     }
-    public static boolean deleteSingle(@NonNull Context context, Uri treeUri) {
-        try {
-            return DocumentsContract.deleteDocument(context.getContentResolver(), treeUri);
-        } catch (Exception e) {
-            return false;
+    @NonNull
+    public static List<Song> matchFilesWithMediaStore(@NonNull Context context, @Nullable List<File> files) {
+        return Libraries.fetchAllSongs(makeSongCursor(context, files));
+    }
+    @Nullable
+    public static SortedCursor makeSongCursor(@NonNull final Context context, @Nullable final List<File> files) {
+        String selection = null;
+        String[] paths = null;
+        if (files != null) {
+            paths = toPathArray(files);
+            final int filesSize = files.size();
+            if (filesSize > 0 && filesSize < 999) {
+                selection = "_data IN (" + makePlaceholders(files.size()) + ")";
+            }
         }
+        Cursor songCursor =  Libraries.makeSongCursor(context, selection, selection == null ? null : paths);
+        return songCursor == null ? null : new SortedCursor(songCursor, paths, "_data");
+    }
+    private static String makePlaceholders(int len) {
+        StringBuilder sb = new StringBuilder(len * 2 - 1);
+        sb.append("?");
+        for (int i = 1; i < len; i++) sb.append(",?");
+        return sb.toString();
     }
 }

@@ -8,6 +8,7 @@ import android.hardware.usb.UsbManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore.Audio.AudioColumns
 import android.util.AndroidRuntimeException
 import android.util.Log
 import android.util.TypedValue
@@ -27,6 +28,8 @@ import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerListBinding
 import com.mohammadkk.mymusicplayer.dialogs.ChangeSortingDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
+import com.mohammadkk.mymusicplayer.extensions.errorToast
+import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
@@ -36,6 +39,7 @@ import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.services.PlaybackStateManager
+import com.mohammadkk.mymusicplayer.services.ScannerService
 import com.mohammadkk.mymusicplayer.viewmodels.SubViewModel
 import kotlin.math.abs
 import kotlin.random.Random
@@ -125,18 +129,19 @@ class PlayerListActivity : BaseActivity() {
             "ALBUM" -> {
                 binding.mainActionbar.setTitle(R.string.album)
                 initializeList(findId.first)
-                initializeMenu()
+                initializeMenu(false)
                 subViewModel.updateList(findId)
             }
             "ARTIST" -> {
                 binding.mainActionbar.setTitle(R.string.artist)
                 initializeList(findId.first)
-                initializeMenu()
+                initializeMenu(false)
                 subViewModel.updateList(findId)
             }
             "OTG" -> {
                 binding.mainActionbar.setTitle(R.string.usb_device)
                 initializeList(findId.first)
+                initializeMenu(true)
                 subViewModel.updateList(findId)
             }
         }
@@ -206,14 +211,34 @@ class PlayerListActivity : BaseActivity() {
         binding.tracksRv.layoutManager = GridLayoutManager(this, spanCount)
         binding.tracksRv.adapter = songsAdapter
     }
-    private fun initializeMenu() {
-        binding.mainActionbar.menu?.add(0, R.id.action_order_by, 0, getString(R.string.order_by))?.run {
-            setIcon(R.drawable.ic_sort)
-            setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
-            setOnMenuItemClickListener {
-                ChangeSortingDialog.showDialog(supportFragmentManager, Constant.SONG_ID)
-                settings.actionModeIndex = 0
-                true
+    private fun initializeMenu(isOtg: Boolean) {
+        if (!isOtg) {
+            binding.mainActionbar.menu?.add(0, R.id.action_order_by, 0, getString(R.string.order_by))?.run {
+                setIcon(R.drawable.ic_sort)
+                setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                setOnMenuItemClickListener {
+                    ChangeSortingDialog.showDialog(supportFragmentManager, Constant.SONG_ID)
+                    settings.actionModeIndex = 0
+                    true
+                }
+            }
+        } else {
+            binding.mainActionbar.menu?.add(0, R.id.action_recheck_library, 0, getString(R.string.order_by))?.run {
+                setIcon(R.drawable.ic_scan_files)
+                setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
+                setOnMenuItemClickListener {
+                    if (hasNotificationApi()) {
+                        val serviceIntent = Intent(this@PlayerListActivity, ScannerService::class.java)
+                        serviceIntent.putExtra(AudioColumns.DATA, settings.otgPartition)
+                        serviceIntent.action = Constant.SCANNER
+                        try {
+                            startService(serviceIntent)
+                        } catch (e: Exception) {
+                            errorToast(e)
+                        }
+                    }
+                    true
+                }
             }
         }
     }

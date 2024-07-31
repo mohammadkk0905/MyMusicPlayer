@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityOptionsCompat
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.mohammadkk.mymusicplayer.Constant
@@ -13,6 +14,7 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
 import com.mohammadkk.mymusicplayer.extensions.bind
+import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
@@ -49,6 +51,8 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
         isGlobalPlayAnim = false
     }
     private fun initializeViewModel() {
+        val primaryDark = requireContext().getAttrColorCompat(com.google.android.material.R.attr.colorPrimaryVariant)
+        binding.songProgress.trackColor = ColorUtils.setAlphaComponent(primaryDark, 80)
         playbackViewModel.song.observe(requireActivity()) {
             onSongChanged(it)
         }

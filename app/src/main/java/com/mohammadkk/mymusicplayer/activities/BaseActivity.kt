@@ -10,7 +10,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
@@ -52,15 +51,22 @@ abstract class BaseActivity : AppCompatActivity() {
         if (songs.isNotEmpty()) {
             if (songs.first().isOTGMode()) {
                 Constant.ensureBackgroundThread {
-                    var result = false
-                    for (song in songs) {
-                        result = try {
-                            FileUtils.deleteSingle(this, song.path.toUri())
-                        } catch (e: Exception) {
-                            false
+                    val files = songs.map { File(it.path) }
+                    if (Constant.isRPlus()) {
+                        val resolved = FileUtils.matchFilesWithMediaStore(this, files)
+                        val uris = resolved.map { it.toContentUri() }
+                        deleteSDK30Uris(uris) { s -> if (s) callback() }
+                    } else {
+                        var result = false
+                        for (file in files) {
+                            result = try {
+                                file.delete()
+                            } catch (e: Exception) {
+                                false
+                            }
                         }
+                        if (result) runOnUiThread { callback() }
                     }
-                    if (result) runOnUiThread { callback() }
                 }
                 return
             }

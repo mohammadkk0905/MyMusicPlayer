@@ -13,7 +13,7 @@ class AudioGlideModule : AppGlideModule() {
         registry.prepend(
             AudioFileCover::class.java,
             InputStream::class.java,
-            AudioFileCoverLoader.Factory(context)
+            AudioFileCoverLoader.Factory()
         )
     }
     override fun isManifestParsingEnabled(): Boolean {

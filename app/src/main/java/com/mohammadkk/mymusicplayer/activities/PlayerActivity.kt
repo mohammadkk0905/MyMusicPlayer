@@ -11,8 +11,8 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerBinding
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.errorToast
+import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
-import com.mohammadkk.mymusicplayer.extensions.getPrimaryColor
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.toast
@@ -156,6 +156,9 @@ class PlayerActivity : AppCompatActivity() {
             updateIconTint(if (isShuffle) getPrimaryColor() else getColorCompat(R.color.widgets_color))
             contentDescription = getString(if (isShuffle) R.string.shuffle_enabled else R.string.shuffle_disabled)
         }
+    }
+    private fun getPrimaryColor(): Int {
+        return getAttrColorCompat(com.google.android.material.R.attr.colorPrimary)
     }
     private fun togglePlaybackRepeat() {
         val newPlaybackRepeat = baseSettings.playbackRepeat.nextPlayBackRepeat

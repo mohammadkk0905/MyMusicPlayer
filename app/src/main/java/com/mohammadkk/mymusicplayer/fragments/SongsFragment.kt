@@ -12,10 +12,10 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentSongsBinding
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
-import com.mohammadkk.mymusicplayer.extensions.createFastScroll
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Song
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollRecyclerView
 import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.abs
@@ -26,7 +26,6 @@ class SongsFragment : Fragment(R.layout.fragment_songs), SearchView.OnQueryTextL
     private val musicViewModel: MusicViewModel by activityViewModels()
     private val settings = BaseSettings.getInstance()
     private var songsAdapter: SongsAdapter? = null
-    private var isHideShuffle = false
     private var unchangedList = listOf<Song>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +40,20 @@ class SongsFragment : Fragment(R.layout.fragment_songs), SearchView.OnQueryTextL
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = songsAdapter
-            createFastScroll { _, position -> getPopupText(position) }
+            popupProvider = object : FastScrollRecyclerView.PopupProvider {
+                override fun getPopup(pos: Int): String {
+                    return getPopupText(pos)
+                }
+            }
+            listener = object : FastScrollRecyclerView.Listener {
+                override fun onFastScrollingChanged(isFastScrolling: Boolean) {
+                    if (isFastScrolling) {
+                        binding.fabShuffle.hide()
+                    } else {
+                        binding.fabShuffle.show()
+                    }
+                }
+            }
         }
         collectImmediately(musicViewModel.songsList, ::updateList)
         binding.fragRefresher.setOnRefreshListener {

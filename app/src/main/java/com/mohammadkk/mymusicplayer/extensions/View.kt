@@ -9,12 +9,14 @@ import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -24,12 +26,37 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
 import com.mohammadkk.mymusicplayer.models.Song
-import com.mohammadkk.mymusicplayer.ui.drawables.PopupBackground
-import me.zhanghai.android.fastscroll.FastScroller
-import me.zhanghai.android.fastscroll.FastScrollerBuilder
-import me.zhanghai.android.fastscroll.PopupStyles
-import me.zhanghai.android.fastscroll.PopupTextProvider
 
+val Drawable.isRtl: Boolean
+    get() = DrawableCompat.getLayoutDirection(this) == View.LAYOUT_DIRECTION_RTL
+
+fun View.isUnder(x: Float, y: Float, minTouchTargetSize: Int = 0): Boolean {
+    return isUnderImpl(x, left, right, (parent as View).width, minTouchTargetSize) &&
+            isUnderImpl(y, top, bottom, (parent as View).height, minTouchTargetSize)
+}
+private fun isUnderImpl(
+    position: Float,
+    viewStart: Int,
+    viewEnd: Int,
+    parentEnd: Int,
+    minTouchTargetSize: Int
+): Boolean {
+    val viewSize = viewEnd - viewStart
+    if (viewSize >= minTouchTargetSize) {
+        return position >= viewStart && position < viewEnd
+    }
+
+    var touchTargetStart = viewStart - (minTouchTargetSize - viewSize) / 2
+    if (touchTargetStart < 0) touchTargetStart = 0
+
+    var touchTargetEnd = touchTargetStart + minTouchTargetSize
+    if (touchTargetEnd > parentEnd) {
+        touchTargetEnd = parentEnd
+        touchTargetStart = touchTargetEnd - minTouchTargetSize
+        if (touchTargetStart < 0) touchTargetStart = 0
+    }
+    return position >= touchTargetStart && position < touchTargetEnd
+}
 fun ViewPager2.reduceDragSensitivity() {
     try {
         val recycler = ViewPager2::class.java.getDeclaredField("mRecyclerView")
@@ -42,19 +69,6 @@ fun ViewPager2.reduceDragSensitivity() {
     } catch (e: Exception) {
         Log.e("MainActivity", e.stackTraceToString())
     }
-}
-fun RecyclerView.createFastScroll(callback: PopupTextProvider? = null): FastScroller {
-    val ctx = context
-    val textColor = ctx.getColorCompat(R.color.main_bg)
-    val fsBuilder = FastScrollerBuilder(this)
-    fsBuilder.useMd2Style()
-    fsBuilder.setPopupStyle { popupText ->
-        PopupStyles.MD2.accept(popupText)
-        popupText.background = PopupBackground(context)
-        popupText.setTextColor(textColor)
-    }
-    if (callback != null) fsBuilder.setPopupTextProvider(callback)
-    return fsBuilder.setPadding(0, 0, 0, 0).build()
 }
 fun ImageView.updateIconTint(@ColorInt color: Int) {
     ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(color))

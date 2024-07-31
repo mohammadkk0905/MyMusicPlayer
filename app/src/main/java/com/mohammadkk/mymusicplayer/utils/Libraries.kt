@@ -4,13 +4,12 @@ import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio
-import androidx.core.net.toUri
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
-import com.mohammadkk.mymusicplayer.extensions.fromTreeUri
 import com.mohammadkk.mymusicplayer.models.Album
 import com.mohammadkk.mymusicplayer.models.Artist
 import com.mohammadkk.mymusicplayer.models.Song
+import java.io.File
 import java.text.Collator
 import kotlin.math.abs
 
@@ -19,6 +18,33 @@ object Libraries {
 
     fun fetchAllSongs(context: Context, selection: String?, selectionArgs: Array<String>?): List<Song> {
         val songs = arrayListOf<Song>()
+        val cursor = makeSongCursor(context, selection, selectionArgs)
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                do {
+                    songs.add(getSongFromCursorImpl(cursor))
+                } while (cursor.moveToNext())
+            }
+        }
+        return songs
+    }
+    @JvmStatic
+    fun fetchAllSongs(cursor: Cursor?): List<Song> {
+        val songs = arrayListOf<Song>()
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                songs.add(getSongFromCursorImpl(cursor))
+            } while (cursor.moveToNext())
+        }
+        cursor?.close()
+        return songs
+    }
+    @JvmStatic
+    fun makeSongCursor(
+        context: Context,
+        selection: String?,
+        selectionValues: Array<String>?
+    ): Cursor? {
         val uri = if (Constant.isQPlus()) {
             Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -42,19 +68,15 @@ object Libraries {
         } else {
             IS_MUSIC
         }
-        val sortOrder = Audio.Media.DEFAULT_SORT_ORDER
-        try {
-            val cursor = context.contentResolver.query(uri, projection, ms, selectionArgs, sortOrder)
-            cursor?.use {
-                if (cursor.moveToFirst()) {
-                    do {
-                        songs.add(getSongFromCursorImpl(cursor))
-                    } while (cursor.moveToNext())
-                }
-            }
-        } catch (ignored: Exception) {
+        return try {
+            context.contentResolver.query(
+                uri, projection,
+                ms, selectionValues,
+                Audio.Media.DEFAULT_SORT_ORDER
+            )
+        } catch (ex: SecurityException) {
+            return null
         }
-        return songs
     }
     private fun getAlbumCount(list: List<Song>): Int {
         val set = HashSet<Long>()
@@ -147,11 +169,25 @@ object Libraries {
         return fetchAllSongs(context, selection, selectionArgs)
     }
     fun fetchSongsByOtg(context: Context): List<Song> {
-        val documentFile = context.fromTreeUri(BaseSettings.getInstance().otgTreeUri.toUri())
-        if (documentFile == null || !documentFile.exists()) return emptyList()
-        var index = 0
-        val items = FileUtils.listFilesDeep(context.applicationContext, documentFile.uri)
-        return items.mapNotNull { it.toSongItem(index++) }
+        val otgPath = BaseSettings.getInstance().otgPartition
+        if (otgPath.isEmpty()) return emptyList()
+        val files = FileUtils.listFilesDeep(File(otgPath), FileUtils.AUDIO_FILE_FILTER)
+        return files.mapIndexed { index, file ->
+            val date = file.lastModified()
+            Song(
+                id = index.toLong(),
+                albumId = 0L,
+                artistId = 0L,
+                title = file.nameWithoutExtension,
+                album = "Unknown Album",
+                artist = "Unknown Artist",
+                path = file.path,
+                year = 0,
+                duration = 0,
+                dateAdded = date.toInt(),
+                dateModified = date
+            )
+        }
     }
     fun getSectionName(mediaTitle: String?, stripPrefix: Boolean = false): String {
         var mMediaTitle = mediaTitle

@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbManager
@@ -16,7 +15,9 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.TransactionTooLargeException
+import android.util.TypedValue
 import android.widget.Toast
+import androidx.annotation.AttrRes
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
@@ -28,7 +29,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.android.material.color.MaterialColors
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.database.QueueItemsDao
@@ -89,9 +89,15 @@ fun Context.getDrawableCompat(@DrawableRes drawableRes: Int): Drawable {
         "Invalid resource: Drawable was null"
     }
 }
-fun Context.getPrimaryColor(): Int {
-    val result = MaterialColors.getColor(this, com.google.android.material.R.attr.colorPrimary, Color.TRANSPARENT)
-    return if (result != Color.TRANSPARENT) result else getColorCompat(R.color.light_blue_400)
+fun Context.getAttrColorCompat(@AttrRes attrRes: Int): Int {
+    val resolvedAttr = TypedValue()
+    theme.resolveAttribute(attrRes, resolvedAttr, true)
+    val color = if (resolvedAttr.resourceId != 0) {
+        resolvedAttr.resourceId
+    } else {
+        resolvedAttr.data
+    }
+    return getColorCompat(color)
 }
 fun AppCompatActivity.overridePendingTransitionCompat(isClose: Boolean, enterAnim: Int, exitAnim: Int) {
     if (Constant.isUpsideDownCakePlus()) {

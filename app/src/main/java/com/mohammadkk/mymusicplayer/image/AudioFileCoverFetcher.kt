@@ -1,17 +1,18 @@
 package com.mohammadkk.mymusicplayer.image
 
-import android.content.Context
 import android.media.MediaMetadataRetriever
-import androidx.core.net.toUri
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.data.DataFetcher
+import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.extensions.toAlbumArtURI
+import org.jaudiotagger.audio.AudioFileIO
 import java.io.ByteArrayInputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStream
 
-class AudioFileCoverFetcher(private val context: Context, private val model: AudioFileCover) : DataFetcher<InputStream> {
+class AudioFileCoverFetcher(private val model: AudioFileCover) : DataFetcher<InputStream> {
     private var stream: InputStream? = null
 
     override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
@@ -24,17 +25,19 @@ class AudioFileCoverFetcher(private val context: Context, private val model: Aud
     }
     private fun getStream(path: String): InputStream? {
         val mmr = MediaMetadataRetriever()
-        if (path.startsWith("content://")) {
-            mmr.setDataSource(context, path.toUri())
-        } else {
-            mmr.setDataSource(path)
-        }
-        val picture = mmr.embeddedPicture
+        mmr.setDataSource(path)
+        val cover = mmr.embeddedPicture
         mmr.release()
-        return picture?.let { ByteArrayInputStream(it) }
+        return cover?.let { ByteArrayInputStream(it) }
     }
     private fun getFallback(): InputStream? {
-        return context.contentResolver.openInputStream(model.albumId.toAlbumArtURI())
+        val audioIO = runCatching { AudioFileIO.read(File(model.filePath)).tag }.getOrNull()
+        val bytes = audioIO?.firstArtwork?.binaryData?.let { ByteArrayInputStream(it) }
+        if (bytes == null && model.albumId != 0L) {
+            val contentResolver = BaseSettings.getInstance().app.contentResolver
+            return contentResolver.openInputStream(model.albumId.toAlbumArtURI())
+        }
+        return bytes
     }
     override fun cleanup() {
         if (stream != null) {

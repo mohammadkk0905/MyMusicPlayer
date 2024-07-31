@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
@@ -24,21 +25,21 @@ import com.mohammadkk.mymusicplayer.databinding.ItemGridBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
-import com.mohammadkk.mymusicplayer.extensions.createFastScroll
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
 import com.mohammadkk.mymusicplayer.models.Album
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollRecyclerView
 import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
-import me.zhanghai.android.fastscroll.PopupTextProvider
 import kotlin.math.abs
 
 class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQueryTextListener {
     private lateinit var binding: FragmentLibrariesBinding
     private val musicViewModel: MusicViewModel by activityViewModels()
+    private val settings = BaseSettings.getInstance()
     private var albumsAdapter: AlbumsAdapter? = null
     private var unchangedList = listOf<Album>()
 
@@ -54,7 +55,11 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = albumsAdapter
-            createFastScroll()
+            popupProvider = object : FastScrollRecyclerView.PopupProvider {
+                override fun getPopup(pos: Int): String {
+                    return getPopupText(pos)
+                }
+            }
         }
         collectImmediately(musicViewModel.albumsList, ::updateList)
         binding.fragRefresher.setOnRefreshListener {
@@ -68,6 +73,17 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
         return resources.getInteger(
             if (requireContext().isLandscape) R.integer.def_grid_columns_land else R.integer.def_grid_columns
         )
+    }
+    private fun getPopupText(position: Int): String {
+        val album = unchangedList.getOrNull(position)
+        val result = when (abs(settings.albumsSorting)) {
+            Constant.SORT_BY_TITLE -> album?.title
+            Constant.SORT_BY_ARTIST -> album?.artist
+            Constant.SORT_BY_YEAR -> return album?.year?.toLocaleYear() ?: "-"
+            Constant.SORT_BY_DURATION -> return album?.duration?.toFormattedDuration(true) ?: "-"
+            else -> album?.title
+        }
+        return Libraries.getSectionName(result, true)
     }
     private fun updateList(albums: List<Album>) {
         unchangedList = albums
@@ -111,7 +127,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
     private class AlbumsAdapter(
         context: FragmentActivity,
         var dataSet: MutableList<Album>
-    ) : AbsMultiAdapter<AlbumsAdapter.ViewHolder, Album>(context), PopupTextProvider {
+    ) : AbsMultiAdapter<AlbumsAdapter.ViewHolder, Album>(context) {
         private val selectedColor = context.getColorCompat(R.color.blue_primary_container)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -139,17 +155,6 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bindItems(dataSet[holder.absoluteAdapterPosition])
-        }
-        override fun getPopupText(view: View, position: Int): CharSequence {
-            val album = dataSet.getOrNull(position)
-            val result = when (abs(baseSettings.albumsSorting)) {
-                Constant.SORT_BY_TITLE -> album?.title
-                Constant.SORT_BY_ARTIST -> album?.artist
-                Constant.SORT_BY_YEAR -> return album?.year?.toLocaleYear() ?: "-"
-                Constant.SORT_BY_DURATION -> return album?.duration?.toFormattedDuration(true) ?: "-"
-                else -> album?.title
-            }
-            return Libraries.getSectionName(result, true)
         }
         fun swapDataSet(dataSet: List<Album>) {
             this.dataSet = ArrayList(dataSet)
