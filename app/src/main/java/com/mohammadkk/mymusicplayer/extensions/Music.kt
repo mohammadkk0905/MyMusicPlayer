@@ -1,12 +1,8 @@
 package com.mohammadkk.mymusicplayer.extensions
 
 import android.app.PendingIntent
-import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
@@ -76,35 +72,5 @@ fun Song.toProviderUri(context: Context): Uri {
         } catch (e: IllegalArgumentException) {
             toContentUri()
         }
-    }
-}
-fun Song.getCoverArt(context: Context, mode: Int): Bitmap? {
-    return when (mode) {
-        Constant.COVER_OFF -> return null
-        Constant.COVER_MEDIA_STORE -> if (!isOTGMode()) {
-           getAlbumArt(context.contentResolver, albumId)
-        } else {
-            getTrackArt(context, toContentUri())
-        }
-        else -> getTrackArt(context, toContentUri())
-    }
-}
-private fun getTrackArt(context: Context, uri: Uri): Bitmap? {
-    val mmr = MediaMetadataRetriever()
-    return try {
-        mmr.setDataSource(context, uri)
-        val art = mmr.embeddedPicture
-        mmr.release()
-        art?.let { BitmapFactory.decodeByteArray(it, 0, it.size, BitmapFactory.Options()) }
-    } catch (e: Exception) {
-        null
-    }
-}
-private fun getAlbumArt(resolver: ContentResolver, albumId: Long): Bitmap? {
-    return try {
-        val fd = resolver.openFileDescriptor(albumId.toAlbumArtURI(), "r") ?: return null
-        BitmapFactory.decodeFileDescriptor(fd.fileDescriptor).also { fd.close() }
-    } catch (e: Exception) {
-        null
     }
 }

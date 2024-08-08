@@ -10,7 +10,9 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
+import android.os.Binder
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -19,21 +21,26 @@ import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.util.Size
 import android.view.KeyEvent
 import androidx.core.app.ServiceCompat
 import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
 import androidx.media.session.MediaButtonReceiver
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.Transition
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.database.SongsDatabase
-import com.mohammadkk.mymusicplayer.extensions.getCoverArt
+import com.mohammadkk.mymusicplayer.extensions.getDrawableCompat
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.queueDAO
 import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.extensions.toImmutableFlag
+import com.mohammadkk.mymusicplayer.image.GlideExtensions
+import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
 import com.mohammadkk.mymusicplayer.models.QueueItem
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.utils.Libraries
@@ -48,11 +55,11 @@ import kotlin.math.max
 import kotlin.math.min
 
 class MusicService : Service(), MusicPlayer.PlaybackListener {
+    private val musicBind: IBinder = MusicBinder()
     private val playbackStateManager = PlaybackStateManager.getInstance()
     private val settings = BaseSettings.getInstance()
     private var isServiceInit = false
     private var mCurrSongCover: Bitmap? = null
-    private var mPlaceholder: Bitmap? = null
     private var mExecutor: ScheduledExecutorService? = null
     private var mSeekBarPositionUpdateTask: Runnable? = null
     private var playOnPrepare = true
@@ -143,7 +150,6 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
         if (!Constant.isQPlus() && !hasPermission(Constant.STORAGE_PERMISSION)) {
             return START_NOT_STICKY
         }
-
         isServiceInit = true
 
         val action = intent?.action
@@ -155,10 +161,9 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             Constant.NEXT -> onHandleNext()
             Constant.FINISH -> handleFinish(false)
             Constant.DISMISS -> handleFinish(true)
-            Constant.SET_PROGRESS -> onHandleSetProgress(intent)
             Constant.SKIP_BACKWARD -> onSkip(false)
             Constant.SKIP_FORWARD -> onSkip(true)
-            Constant.UPDATE_QUEUE_SIZE -> updateMediaSession()
+            Constant.UPDATE_QUEUE_SIZE -> updateMediaSession {}
             Constant.REFRESH_LIST -> onHandleRefreshList()
             Constant.BROADCAST_STATUS -> {
                 broadcastSongStateChange(isPlaying())
@@ -215,7 +220,7 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             setSong(wantedId, false)
         }
     }
-    private fun onHandlePrevious() {
+    fun onHandlePrevious() {
         playOnPrepare = true
         Constant.ensureBackgroundThread {
             val queueItem = getSkipQueue(false)
@@ -223,14 +228,14 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             setSong(queueItem.songId, true)
         }
     }
-    private fun onHandlePlayPause() {
+    fun onHandlePlayPause() {
         playOnPrepare = true
         if (isPlaying())
             onPauseSong()
         else
             onResumeSong()
     }
-    private fun onHandleNext() {
+    fun onHandleNext() {
         playOnPrepare = true
         setupNextSong()
     }
@@ -257,7 +262,7 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
         }
     }
-    private fun handleFinish(isDismiss: Boolean) {
+    fun handleFinish(isDismiss: Boolean) {
         if (isDismiss) {
             if (isPlaying()) onPauseSong(false)
             stopForegroundOrNotification()
@@ -293,12 +298,6 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             val queueItem = getSkipQueue(true)
             setProgressOnPrepare = queueItem.lastPosition
             setSong(queueItem.songId, true)
-        }
-    }
-    private fun onHandleSetProgress(intent: Intent) {
-        if (mPlayer != null) {
-            val progress = intent.getIntExtra(Constant.PROGRESS, mPlayer!!.position())
-            updateProgress(progress)
         }
     }
     private fun startUpdatingCallbackWithPosition() {
@@ -383,7 +382,7 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
         songStateChanged(false)
         if (!isServiceInit) onHandleInit()
     }
-    private fun onSkip(forward: Boolean) {
+    fun onSkip(forward: Boolean) {
         val curr = mPlayer?.position() ?: return
         val newProgress = if (forward) min(curr + 1000, mPlayer!!.duration()) else max(curr - 1000, 0)
         mPlayer!!.seekTo(newProgress)
@@ -426,15 +425,15 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             }
         }
     }
-    private fun updateProgress(progress: Int) {
-        mPlayer!!.seekTo(progress)
+    fun updateProgress(progress: Int): Int {
+        val result = mPlayer!!.seekTo(progress)
         saveSongProgress()
         onResumeSong()
+        return result
     }
     private fun songChanged() {
         broadcastSongChange()
-        updateMediaSession()
-        updateMediaSessionState()
+        updateMediaSession(::updateMediaSessionState)
     }
     private fun songStateChanged(playing: Boolean = isPlaying(), notify: Boolean = true) {
         onHandleProgressHandler(playing)
@@ -476,9 +475,7 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
     private fun broadcastSongStateChange(playing: Boolean) {
         playbackStateManager.songStateChanged(playing)
     }
-    private fun updateMediaSession() {
-        val imageScreen = getSongCoverImage() ?: mPlaceholder
-        mCurrSongCover = imageScreen
+    fun updateMediaSession(onCompletion: () -> Unit) {
         val song = mCurrSong
         if (song == null) {
             mMediaSession?.setMetadata(null)
@@ -493,9 +490,40 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, song.duration.toLong())
             .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, (findIndex(song) + 1).toLong())
             .putLong(MediaMetadataCompat.METADATA_KEY_YEAR, song.year.toLong())
-            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, imageScreen)
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, null)
             .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, mSongs.size.toLong())
 
+        try {
+            Glide.with(this)
+                .asBitmap()
+                .getCoverOptions(song, getDrawableCompat(R.drawable.ic_audiotrack))
+                .load(GlideExtensions.getSongModel(song))
+                .into(object : CustomTarget<Bitmap?>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        super.onLoadFailed(errorDrawable)
+                        mCurrSongCover = BitmapFactory.decodeResource(resources, R.drawable.ic_start_music)
+                        metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mCurrSongCover)
+                        mMediaSession?.setMetadata(metadata.build())
+                        onCompletion()
+                    }
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: Transition<in Bitmap?>?
+                    ) {
+                        mCurrSongCover = resource
+                        metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, resource)
+                        mMediaSession?.setMetadata(metadata.build())
+                        onCompletion()
+                    }
+                    override fun onLoadCleared(placeholder: Drawable?) {
+                    }
+                })
+        } catch (e: IllegalArgumentException) {
+            mCurrSongCover = BitmapFactory.decodeResource(resources, R.drawable.ic_start_music)
+            metadata.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, mCurrSongCover)
+            mMediaSession?.setMetadata(metadata.build())
+            onCompletion()
+        }
         mMediaSession?.setMetadata(metadata.build())
     }
     private fun updateMediaSessionState() {
@@ -521,25 +549,6 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
         } catch (ignored: Exception) {
         }
     }
-    private fun getSongCoverImage(): Bitmap? {
-        if (mPlaceholder == null) {
-            mPlaceholder = BitmapFactory.decodeResource(resources, R.drawable.ic_start_music)
-        }
-        if (settings.coverMode == Constant.COVER_OFF) return null
-        val coverArt = mCurrSong?.getCoverArt(this, settings.coverMode)
-        if (coverArt == null) {
-            if (Constant.isQPlus()) {
-                if (mCurrSong?.path?.startsWith("content://") == true) {
-                    try {
-                        val size = Size(512, 512)
-                        return contentResolver.loadThumbnail(mCurrSong!!.path.toUri(), size, null)
-                    } catch (ignored: Exception) {
-                    }
-                }
-            }
-        }
-        return coverArt
-    }
     private fun destroyPlayer() {
         saveSongProgress()
         mCurrSong = null
@@ -555,8 +564,8 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             else -> mCurrSong?.id == mSongs.last().id
         }
     }
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
+    override fun onBind(intent: Intent?): IBinder {
+        return musicBind
     }
     private fun initMediaPlayerIfNeeded() {
         if (mPlayer != null) return
@@ -566,18 +575,18 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
         )
     }
     private fun startForegroundOrNotify() {
-        val notificationUtils = this.notificationUtils ?: return
+        val currentSong = mCurrSong ?: return
         notificationHandler.removeCallbacksAndMessages(null)
         notificationHandler.postDelayed({
             if (mCurrSongCover?.isRecycled == true) {
                 mCurrSongCover = BitmapFactory.decodeResource(resources, R.drawable.ic_start_music)
             }
-            notificationUtils.createMusicNotification(
-                song = mCurrSong,
+            notificationUtils?.createMusicNotification(
+                song = currentSong,
                 playing = isPlaying(),
                 largeIcon = mCurrSongCover
             ) {
-                notificationUtils.notify(NotificationUtils.NOTIFICATION_ID, it)
+                notificationUtils!!.notify(NotificationUtils.NOTIFICATION_ID, it)
                 try {
                     if (Constant.isQPlus()) {
                         startForeground(
@@ -692,6 +701,9 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
                 abortBroadcast()
             }
         }
+    }
+    inner class MusicBinder : Binder() {
+        val service: MusicService get() = this@MusicService
     }
     companion object {
         private const val PLAYBACK_STATE_ACTIONS = PlaybackStateCompat.ACTION_STOP or

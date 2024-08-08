@@ -24,11 +24,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.documentfile.provider.DocumentFile
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.bumptech.glide.util.Util.isOnMainThread
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.database.QueueItemsDao
@@ -48,10 +48,10 @@ fun Context.hasPermission(permission: String?): Boolean {
     if (permission == null) return false
     return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 }
-fun Context.sendIntent(actionName: String, isForeground: Boolean = true) {
+fun Context.sendIntent(actionName: String) {
     val intent = Intent(this, MusicService::class.java).setAction(actionName)
     try {
-        if (Constant.isOreoPlus() && isForeground) {
+        if (Constant.isOreoPlus()) {
             startForegroundService(intent)
         } else {
             startService(intent)
@@ -122,11 +122,6 @@ fun Context.isMassUsbDeviceConnected(): Boolean {
         }
     }
     return false
-}
-fun Context.fromTreeUri(fileUri: Uri) = try {
-    DocumentFile.fromTreeUri(this, fileUri)
-} catch (e: Exception) {
-    null
 }
 fun Activity.shareSongsIntent(songs: List<Song>) {
     if (songs.size == 1) {
@@ -205,7 +200,7 @@ fun Context.toast(id: Int, length: Int = Toast.LENGTH_SHORT) {
 }
 fun Context.toast(message: String?, length: Int = Toast.LENGTH_SHORT) {
     try {
-        if (Constant.isOnMainThread()) {
+        if (isOnMainThread()) {
             doToast(this, message ?: "null", length)
         } else {
             Handler(Looper.getMainLooper()).post {

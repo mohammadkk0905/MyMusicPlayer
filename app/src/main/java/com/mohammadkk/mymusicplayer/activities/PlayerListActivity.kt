@@ -290,22 +290,20 @@ class PlayerListActivity : BaseActivity() {
     }
     override fun onResume() {
         super.onResume()
-        if (MusicService.isMusicPlayer()) {
-            val visibility = binding.navFragPlayer.visibility
-            if (visibility != View.VISIBLE) {
+        if (MusicService.isMusicPlayer() && MusicService.mCurrSong != null) {
+            if (binding.nowPlayerFrag.visibility != View.VISIBLE) {
                 binding.mainRelative.updatePadding(
                     left = 0, top = 0, right = 0,
                     bottom = getActionBarHeight()
                 )
-                binding.navFragPlayer.visibility = View.VISIBLE
+                binding.nowPlayerFrag.visibility = View.VISIBLE
             }
         } else {
-            val visibility = binding.navFragPlayer.visibility
-            if (visibility != View.GONE) {
+            if (binding.nowPlayerFrag.visibility != View.GONE) {
                 binding.mainRelative.updatePadding(
                     left = 0, top = 0, right = 0, bottom = 0
                 )
-                binding.navFragPlayer.visibility = View.GONE
+                binding.nowPlayerFrag.visibility = View.GONE
             }
         }
     }

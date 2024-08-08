@@ -2,8 +2,8 @@ package com.mohammadkk.mymusicplayer
 
 import android.Manifest
 import android.os.Build
-import android.os.Looper
 import androidx.annotation.ChecksSdkIntAtLeast
+import com.bumptech.glide.util.Util.isOnMainThread
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.concurrent.ExecutorService
@@ -32,7 +32,6 @@ object Constant {
     const val ALBUM_ID = "album_id"
     const val ARTIST_ID = "artist_id"
     const val RESTART_PLAYER = "restart_player"
-    const val PROGRESS = "progress"
 
     const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
 
@@ -46,7 +45,6 @@ object Constant {
     const val NEXT = PATH + "NEXT"
     const val FINISH = PATH + "FINISH"
     const val DISMISS = PATH + "DISMISS"
-    const val SET_PROGRESS = PATH + "SET_PROGRESS"
     const val SKIP_BACKWARD = PATH + "SKIP_BACKWARD"
     const val SKIP_FORWARD = PATH + "SKIP_FORWARD"
     const val REFRESH_LIST = PATH + "REFRESH_LIST"
@@ -92,7 +90,6 @@ object Constant {
             null
         }
     }
-    fun isOnMainThread() = Looper.myLooper() == Looper.getMainLooper()
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun isUpsideDownCakePlus() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE

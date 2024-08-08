@@ -35,7 +35,8 @@
     <color name="blue_grey_900">#263238</color>
 
     <color name="cover_bg">#E5E5E5</color>
-    <color name="cover_color">#454545</color>
+    <color name="secondary_bg">#F6F6F6</color>
+    <color name="primary_divider">#EAEAEA</color>
     <color name="widgets_color">#212121</color>
     <color name="action_color">#5E818181</color>
     <color name="main_bg">#FCFCFC</color>

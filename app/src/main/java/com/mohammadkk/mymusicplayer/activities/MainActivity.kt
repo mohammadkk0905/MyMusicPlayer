@@ -38,6 +38,7 @@ import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.fragments.AlbumsFragment
 import com.mohammadkk.mymusicplayer.fragments.ArtistsFragment
 import com.mohammadkk.mymusicplayer.fragments.SongsFragment
+import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.max
@@ -69,7 +70,7 @@ class MainActivity : BaseActivity() {
                     .setTitle(R.string.app_name)
                     .setMessage(R.string.on_close_activity)
                     .setPositiveButton(R.string.yes) { _, _ ->
-                        if (MusicService.isPlaying()) sendIntent(Constant.FINISH, false)
+                        if (MusicService.isPlaying()) AudioPlayerRemote.quit()
                         finishAndRemoveTask()
                     }
                     .setNegativeButton(R.string.no) { _, _ ->
@@ -78,7 +79,7 @@ class MainActivity : BaseActivity() {
                     .setNeutralButton(android.R.string.cancel, null)
                     .show()
             } else {
-                if (MusicService.isMusicPlayer()) sendIntent(Constant.FINISH, false)
+                if (MusicService.isMusicPlayer()) AudioPlayerRemote.quit()
                 finishAndRemoveTask()
             }
         }
@@ -223,7 +224,7 @@ class MainActivity : BaseActivity() {
                         if (settings.coverMode != which) {
                             settings.coverMode = which
                             reactivity()
-                            if (MusicService.isMusicPlayer()) sendIntent(Constant.UPDATE_QUEUE_SIZE)
+                            if (MusicService.isMusicPlayer()) AudioPlayerRemote.updateAudioNotification()
                         }
                         dialog.dismiss()
                     }
@@ -251,14 +252,12 @@ class MainActivity : BaseActivity() {
     }
     override fun onResume() {
         super.onResume()
-        if (MusicService.isMusicPlayer()) {
-            val visibility = binding.nowPlayerFrag.visibility
-            if (visibility != View.VISIBLE) {
+        if (MusicService.isMusicPlayer() && MusicService.mCurrSong != null) {
+            if (binding.nowPlayerFrag.visibility != View.VISIBLE) {
                 binding.nowPlayerFrag.visibility = View.VISIBLE
             }
         } else {
-            val visibility = binding.nowPlayerFrag.visibility
-            if (visibility != View.GONE) {
+            if (binding.nowPlayerFrag.visibility != View.GONE) {
                 binding.nowPlayerFrag.visibility = View.GONE
             }
         }

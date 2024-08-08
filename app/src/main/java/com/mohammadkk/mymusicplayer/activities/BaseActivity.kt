@@ -1,8 +1,11 @@
 package com.mohammadkk.mymusicplayer.activities
 
 import android.app.Activity
+import android.content.ComponentName
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
+import android.os.IBinder
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.view.ActionMode
@@ -18,6 +21,7 @@ import com.mohammadkk.mymusicplayer.extensions.errorToast
 import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.models.Song
+import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.utils.FileUtils
 import java.io.File
 
@@ -25,6 +29,7 @@ abstract class BaseActivity : AppCompatActivity() {
     protected val settings: BaseSettings get() = BaseSettings.getInstance()
     private var mLaunchActivity: ActivityResultLauncher<IntentSenderRequest>? = null
     internal var adapterActionMode: ActionMode? = null
+    private var serviceToken: AudioPlayerRemote.ServiceToken? = null
     internal var isFadeAnimation = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,6 +38,14 @@ abstract class BaseActivity : AppCompatActivity() {
             mAfterSdk30Action?.invoke(it.resultCode == Activity.RESULT_OK)
             mAfterSdk30Action = null
         }
+        serviceToken = AudioPlayerRemote.bindToService(this, object : ServiceConnection {
+            override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+
+            }
+            override fun onServiceDisconnected(name: ComponentName?) {
+
+            }
+        })
     }
     private fun deleteSDK30Uris(uris: List<Uri>, callback: (success: Boolean) -> Unit) {
         if (Constant.isRPlus()) {
@@ -95,9 +108,6 @@ abstract class BaseActivity : AppCompatActivity() {
             }
         }
     }
-    protected fun isOTGRootFolder(uri: Uri): Boolean {
-        return isExternalStorageDocument(uri) && isRootUri(uri) && !isInternalStorage(uri)
-    }
     private fun isRootUri(uri: Uri): Boolean {
         return uri.lastPathSegment?.endsWith(":") ?: false
     }
@@ -109,6 +119,11 @@ abstract class BaseActivity : AppCompatActivity() {
         return Constant.EXTERNAL_STORAGE_AUTHORITY == uri.authority
     }
     open fun onReloadLibrary(mode: String?) {
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        AudioPlayerRemote.unbindFromService(serviceToken)
     }
     companion object {
         private var mAfterSdk30Action: ((success: Boolean) -> Unit)? = null

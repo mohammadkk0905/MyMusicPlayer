@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
@@ -19,6 +18,7 @@ import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.extensions.updateIconTint
 import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
 import com.mohammadkk.mymusicplayer.models.Song
+import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.services.MusicService.Companion.isGlobalPlayAnim
 import com.mohammadkk.mymusicplayer.ui.MusicSeekBar
@@ -26,7 +26,7 @@ import com.mohammadkk.mymusicplayer.utils.PlaybackRepeat
 import com.mohammadkk.mymusicplayer.viewmodels.PlaybackViewModel
 import java.util.Locale
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : BaseActivity() {
     private lateinit var binding: ActivityPlayerBinding
     private val baseSettings get() = BaseSettings.getInstance()
     private val playbackViewModel: PlaybackViewModel by viewModels()
@@ -108,15 +108,11 @@ class PlayerActivity : AppCompatActivity() {
         binding.playbackSeekBar.setOnCallback(object : MusicSeekBar.Callback {
             override fun onSeekTo(position: Int) {
                 isGlobalPlayAnim = !MusicService.isPlaying()
-                Intent(this@PlayerActivity, MusicService::class.java).apply {
-                    putExtra(Constant.PROGRESS, position)
-                    action = Constant.SET_PROGRESS
-                    startService(this)
-                }
+                AudioPlayerRemote.seekTo(position)
             }
         })
-        binding.playbackSeekBar.setOnSkipBackward { sendIntent(Constant.SKIP_BACKWARD) }
-        binding.playbackSeekBar.setOnSkipForward { sendIntent(Constant.SKIP_FORWARD) }
+        binding.playbackSeekBar.setOnSkipBackward { AudioPlayerRemote.skip(false) }
+        binding.playbackSeekBar.setOnSkipForward { AudioPlayerRemote.skip(true) }
     }
     private fun initializeButtons() {
         binding.playbackShuffle.setOnClickListener { toggleShuffle() }
@@ -125,18 +121,18 @@ class PlayerActivity : AppCompatActivity() {
             if (binding.playbackSeekBar.positionMills >= 5) {
                 binding.playbackSeekBar.positionMills = 0
             }
-            sendIntent(Constant.PREVIOUS)
+            AudioPlayerRemote.playPreviousSong()
         }
         binding.playbackPlayPause.setOnClickListener {
             isGlobalPlayAnim = true
-            sendIntent(Constant.PLAY_PAUSE)
+            AudioPlayerRemote.playPauseSong()
         }
         binding.playbackSkipNext.setOnClickListener {
             isGlobalPlayAnim = !MusicService.isPlaying()
             if (binding.playbackSeekBar.positionMills >= 5) {
                 binding.playbackSeekBar.positionMills = 0
             }
-            sendIntent(Constant.NEXT)
+            AudioPlayerRemote.playNextSong()
         }
         binding.playbackRepeat.setOnClickListener { togglePlaybackRepeat() }
         initializeBtnShuffle()

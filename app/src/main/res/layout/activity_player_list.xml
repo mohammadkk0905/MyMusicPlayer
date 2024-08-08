@@ -156,7 +156,7 @@
                 android:layout_height="1dp"
                 android:layout_alignParentTop="true"
                 android:alpha="0"
-                android:background="?attr/colorControlHighlight" />
+                android:background="@color/primary_divider" />
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/tracksRv"
                 android:layout_width="match_parent"
@@ -180,20 +180,13 @@
                 app:showDelay="250"
                 app:trackColor="@color/track_color_slider" />
         </RelativeLayout>
-        <androidx.cardview.widget.CardView
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/nowPlayerFrag"
+            android:name="com.mohammadkk.mymusicplayer.fragments.NowPlayingFragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="?attr/actionBarSize"
             android:layout_gravity="bottom"
-            app:cardCornerRadius="0dp"
-            app:cardElevation="@dimen/spacing_tiny">
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/navFragPlayer"
-                android:name="com.mohammadkk.mymusicplayer.fragments.NowPlayingFragment"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="@color/toolbar_bg"
-                android:visibility="gone"
-                tools:layout="@layout/fragment_now_playing" />
-        </androidx.cardview.widget.CardView>
+            android:visibility="gone"
+            tools:layout="@layout/fragment_now_playing" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

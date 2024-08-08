@@ -1,9 +1,12 @@
 package com.mohammadkk.mymusicplayer.fragments
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.graphics.ColorUtils
@@ -19,31 +22,37 @@ import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
+import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.services.MusicService.Companion.isGlobalPlayAnim
 import com.mohammadkk.mymusicplayer.viewmodels.PlaybackViewModel
+import kotlin.math.abs
 
 class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
     private lateinit var binding: FragmentNowPlayingBinding
     private val playbackViewModel: PlaybackViewModel by activityViewModels()
+    private var isStopHandleClick = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentNowPlayingBinding.bind(view)
+        view.setOnTouchListener(FlingPlayBackController())
         initializeViewModel()
         binding.root.setOnClickListener {
-            with(requireActivity()) {
-                val mIntent = Intent(this, PlayerActivity::class.java)
-                mIntent.putExtra("fade_anim", true)
-                val options = ActivityOptionsCompat.makeCustomAnimation(
-                    this, android.R.anim.fade_in, android.R.anim.fade_out
-                ).toBundle()
-                startActivity(mIntent, options)
+            if (!isStopHandleClick) {
+                with(requireActivity()) {
+                    val mIntent = Intent(this, PlayerActivity::class.java)
+                    mIntent.putExtra("fade_anim", true)
+                    val options = ActivityOptionsCompat.makeCustomAnimation(
+                        this, android.R.anim.fade_in, android.R.anim.fade_out
+                    ).toBundle()
+                    startActivity(mIntent, options)
+                }
             }
         }
         binding.btnPlayPause.setOnClickListener {
             isGlobalPlayAnim = true
-            requireContext().sendIntent(Constant.PLAY_PAUSE)
+            AudioPlayerRemote.playPauseSong()
         }
     }
     override fun onStop() {
@@ -98,5 +107,44 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
     private fun setPlayPause(playing: Boolean) {
         binding.btnPlayPause.updatePlayingState(playing, isGlobalPlayAnim)
         isGlobalPlayAnim = false
+    }
+    private inner class FlingPlayBackController : View.OnTouchListener {
+        private val gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                try {
+                    val diffY = e2.y - e1!!.y
+                    val diffX = e2.x - e1.x
+                    if (abs(diffX) > abs(diffY)) {
+                        if (abs(diffX) > 100 && abs(velocityX) > 100) {
+                            if (diffX > 0) {
+                                isGlobalPlayAnim = !MusicService.isPlaying()
+                                AudioPlayerRemote.playNextSong()
+                                return true
+                            }
+                            else {
+                                isGlobalPlayAnim = !MusicService.isPlaying()
+                                AudioPlayerRemote.playPreviousSong()
+                                return true
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                return false
+            }
+        })
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+            if (v != null && event != null) {
+                isStopHandleClick = gestureDetector.onTouchEvent(event)
+            }
+            return false
+        }
     }
 }
