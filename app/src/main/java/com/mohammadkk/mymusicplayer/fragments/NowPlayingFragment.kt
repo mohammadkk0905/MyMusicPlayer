@@ -12,13 +12,11 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
-import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
@@ -85,7 +83,7 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
         super.onViewStateRestored(savedInstanceState)
         if (MusicService.isMusicPlayer()) {
             isGlobalPlayAnim = false
-            context?.sendIntent(Constant.BROADCAST_STATUS)
+            AudioPlayerRemote.broadcastStatusRestore()
         }
     }
     private fun onNoStoragePermission() {

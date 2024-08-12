@@ -24,7 +24,7 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
     private var _binding: DialogSortSheetBinding? = null
     private val sortItems = mutableListOf<Pair<Int, Int>>()
     private val settings = BaseSettings.getInstance()
-    private var modeDialog = Constant.SONG_ID
+    private var modeDialog = 0
     private var baseActivity: BaseActivity? = null
     private var mSortOrder = 1
     private var selectedPosition = 0
@@ -32,7 +32,7 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        modeDialog = arguments?.getString("change_sort_mode") ?: Constant.SONG_ID
+        modeDialog = arguments?.getInt("change_sort_mode") ?: 0
         try {
             baseActivity = activity as BaseActivity
         } catch (e: ClassCastException) {
@@ -45,14 +45,15 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         mSortOrder = settings.songsSorting
         var sortName = abs(mSortOrder)
         when (modeDialog) {
-            Constant.SONG_ID -> {
+            0 -> {
                 sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
                 sortItems.add(Pair(R.string.album, Constant.SORT_BY_ALBUM))
                 sortItems.add(Pair(R.string.artist, Constant.SORT_BY_ARTIST))
                 sortItems.add(Pair(R.string.duration, Constant.SORT_BY_DURATION))
                 sortItems.add(Pair(R.string.date_added, Constant.SORT_BY_DATE_ADDED))
+                sortItems.add(Pair(R.string.date_modified, Constant.SORT_BY_DATE_MODIFIED))
             }
-            Constant.ALBUM_ID -> {
+            1 -> {
                 mSortOrder = settings.albumsSorting
                 sortName = abs(mSortOrder)
                 sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
@@ -61,13 +62,19 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
                 sortItems.add(Pair(R.string.duration, Constant.SORT_BY_DURATION))
                 sortItems.add(Pair(R.string.song_count, Constant.SORT_BY_SONGS))
             }
-            Constant.ARTIST_ID -> {
+            2 -> {
                 mSortOrder = settings.artistsSorting
                 sortName = abs(mSortOrder)
                 sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
                 sortItems.add(Pair(R.string.duration, Constant.SORT_BY_DURATION))
                 sortItems.add(Pair(R.string.song_count, Constant.SORT_BY_SONGS))
                 sortItems.add(Pair(R.string.album_count, Constant.SORT_BY_ALBUMS))
+            }
+            3 -> {
+                mSortOrder = settings.genresSorting
+                sortName = abs(mSortOrder)
+                sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
+                sortItems.add(Pair(R.string.song_count, Constant.SORT_BY_SONGS))
             }
         }
         selectedPosition = sortItems.indexOfFirst { it.second == sortName }
@@ -143,9 +150,10 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
             }
             if (sortName != mSortOrder) {
                 when (modeDialog) {
-                    Constant.SONG_ID -> settings.songsSorting = sortName
-                    Constant.ALBUM_ID -> settings.albumsSorting = sortName
-                    Constant.ARTIST_ID -> settings.artistsSorting = sortName
+                    0 -> settings.songsSorting = sortName
+                    1 -> settings.albumsSorting = sortName
+                    2 -> settings.artistsSorting = sortName
+                    3 -> settings.genresSorting = sortName
                 }
                 baseActivity?.onReloadLibrary(modeDialog)
                 dismiss()
@@ -153,9 +161,9 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         }
     }
     companion object {
-        fun showDialog(manager: FragmentManager, modeId: String) {
+        fun showDialog(manager: FragmentManager, tabIndex: Int) {
             ChangeSortingDialog().apply {
-                arguments = bundleOf("change_sort_mode" to modeId)
+                arguments = bundleOf("change_sort_mode" to tabIndex)
                 show(manager, "CHANGE_SORT_DIALOG")
             }
         }

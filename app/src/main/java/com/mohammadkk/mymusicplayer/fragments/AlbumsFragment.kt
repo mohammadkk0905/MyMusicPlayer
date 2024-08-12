@@ -8,7 +8,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -36,17 +35,13 @@ import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.abs
 
-class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQueryTextListener {
+class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
     private lateinit var binding: FragmentLibrariesBinding
     private val musicViewModel: MusicViewModel by activityViewModels()
     private val settings = BaseSettings.getInstance()
     private var albumsAdapter: AlbumsAdapter? = null
     private var unchangedList = listOf<Album>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        musicViewModel.fragmentLibraries[1] = this
-    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentLibrariesBinding.bind(view)
@@ -62,6 +57,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
             }
         }
         collectImmediately(musicViewModel.albumsList, ::updateList)
+        collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
         binding.fragRefresher.setOnRefreshListener {
             binding.fragRefresher.postDelayed({
                 musicViewModel.updateLibraries()
@@ -90,22 +86,22 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
         albumsAdapter?.swapDataSet(unchangedList)
         handleEmptyList(false)
     }
-    override fun onQueryTextSubmit(query: String?): Boolean {
-        handleSearchAdapter(query)
-        return false
-    }
-    override fun onQueryTextChange(newText: String?): Boolean {
-        handleSearchAdapter(newText)
-        return false
-    }
-    private fun handleSearchAdapter(query: String?) {
-        albumsAdapter?.swapDataSet(if (!query.isNullOrEmpty()) {
-            val q = query.lowercase()
-            unchangedList.filter { it.title.lowercase().contains(q) }
-        } else {
-           unchangedList
-        })
-        handleEmptyList(true)
+    private fun handleSearchAdapter(search: Triple<Int, Boolean, String>) {
+        if (search.first == 1) {
+            if (!search.second) {
+                albumsAdapter?.swapDataSet(if (search.third.isNotEmpty()) {
+                    val q = search.third.lowercase()
+                    unchangedList.filter { it.title.lowercase().contains(q) }
+                } else {
+                    unchangedList
+                })
+                handleEmptyList(true)
+            } else {
+                musicViewModel.setSearch(-1, true, null)
+                albumsAdapter?.swapDataSet(unchangedList)
+                handleEmptyList(false)
+            }
+        }
     }
     private fun handleEmptyList(isSearch: Boolean) {
         if (albumsAdapter?.itemCount == 0) {
@@ -162,7 +158,8 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries), SearchView.OnQuery
         }
         private fun startTracks(album: Album) {
             Intent(context, PlayerListActivity::class.java).apply {
-                putExtra(Constant.ALBUM_ID, album.id)
+                val json = Constant.pairStateToJson(Pair(Constant.ALBUM_TAB, album.id))
+                putExtra(Constant.LIST_CHILD, json)
                 val options = ActivityOptionsCompat.makeCustomAnimation(
                     context, android.R.anim.fade_in, android.R.anim.fade_out
                 ).toBundle()

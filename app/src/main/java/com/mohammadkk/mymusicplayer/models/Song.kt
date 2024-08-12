@@ -10,7 +10,7 @@ data class Song(
     val path: String,
     val year: Int,
     val duration: Int,
-    val dateAdded: Int,
+    val trackNumber: Int,
     val dateModified: Long
 ) {
     fun isOTGMode(): Boolean {
@@ -27,7 +27,7 @@ data class Song(
             path = "",
             year = -1,
             duration = -1,
-            dateAdded = -1,
+            trackNumber = -1,
             dateModified = -1
         )
     }

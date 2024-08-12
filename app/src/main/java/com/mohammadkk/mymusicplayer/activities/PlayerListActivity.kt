@@ -35,7 +35,6 @@ import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
 import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
-import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.services.PlaybackStateManager
@@ -80,7 +79,7 @@ class PlayerListActivity : BaseActivity() {
         binding.swiperList.setOnRefreshListener {
             initRefreshing(true)
             mHandler.postDelayed({
-                onReloadLibrary(Constant.SONG_ID)
+                onReloadLibrary(0)
                 binding.swiperList.isRefreshing = false
             }, 200)
         }
@@ -126,14 +125,20 @@ class PlayerListActivity : BaseActivity() {
         }
         val findId = getPairActivity()
         when (findId?.first) {
-            "ALBUM" -> {
+            Constant.ALBUM_TAB -> {
                 binding.mainActionbar.setTitle(R.string.album)
                 initializeList(findId.first)
                 initializeMenu(false)
                 subViewModel.updateList(findId)
             }
-            "ARTIST" -> {
+            Constant.ARTIST_TAB -> {
                 binding.mainActionbar.setTitle(R.string.artist)
+                initializeList(findId.first)
+                initializeMenu(false)
+                subViewModel.updateList(findId)
+            }
+            Constant.GENRE_TAB -> {
+                binding.mainActionbar.setTitle(R.string.genre)
                 initializeList(findId.first)
                 initializeMenu(false)
                 subViewModel.updateList(findId)
@@ -180,21 +185,10 @@ class PlayerListActivity : BaseActivity() {
     }
     private fun getPairActivity(): Pair<String, Long>? {
         if (mPairActivity == null) {
-            val holder = ArrayList<Pair<String, Long>?>()
-            if (intent.hasExtra(Constant.ALBUM_ID)) {
-                val albumId = intent.getLongExtra(Constant.ALBUM_ID, -1L)
-                if (albumId != -1L) holder.add("ALBUM" to albumId)
-            } else if (intent.hasExtra(Constant.ARTIST_ID)) {
-                val artistId = intent.getLongExtra(Constant.ARTIST_ID, -1L)
-                if (artistId != -1L) holder.add("ARTIST" to artistId)
+            if (intent.hasExtra(Constant.LIST_CHILD)) {
+                mPairActivity = Constant.jsonToPairState(intent.getStringExtra(Constant.LIST_CHILD))
             } else if (intent.getBooleanExtra("otg", false)) {
-                holder.add("OTG" to -1L)
-            }
-            mPairActivity = holder.firstOrNull()
-            if (mPairActivity == null) {
-                toast(R.string.unknown_error_occurred)
-                finish()
-                return null
+                mPairActivity = Pair("OTG", -1L)
             }
         }
         return mPairActivity
@@ -217,7 +211,7 @@ class PlayerListActivity : BaseActivity() {
                 setIcon(R.drawable.ic_sort)
                 setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
                 setOnMenuItemClickListener {
-                    ChangeSortingDialog.showDialog(supportFragmentManager, Constant.SONG_ID)
+                    ChangeSortingDialog.showDialog(supportFragmentManager, 0)
                     settings.actionModeIndex = 0
                     true
                 }
@@ -249,8 +243,9 @@ class PlayerListActivity : BaseActivity() {
     }
     private fun listLoader(songs: List<Song>) {
         val errorRes = when (getPairActivity()?.first) {
-            "ALBUM" -> R.drawable.ic_album
-            "ARTIST" -> R.drawable.ic_artist
+            Constant.ALBUM_TAB -> R.drawable.ic_album
+            Constant.ARTIST_TAB  -> R.drawable.ic_artist
+            Constant.GENRE_TAB  -> R.drawable.ic_genre
             else -> R.drawable.ic_audiotrack
         }
         if (!isIgnoredItems) songsAdapter?.swapDataSet(songs)
@@ -275,9 +270,9 @@ class PlayerListActivity : BaseActivity() {
         }
         return mHeight + resources.getDimensionPixelSize(R.dimen.spacing_small)
     }
-    override fun onReloadLibrary(mode: String?) {
+    override fun onReloadLibrary(tabIndex: Int?) {
         getPairActivity()?.let { pair ->
-            if (mode == Constant.SONG_ID) {
+            if (tabIndex == 0) {
                 subViewModel.updateList(pair)
             } else {
                 isIgnoredItems = true

@@ -24,16 +24,18 @@ object Constant {
     const val SORT_BY_ARTIST = 4
     const val SORT_BY_DURATION = 8
     const val SORT_BY_DATE_ADDED = 16
-    const val SORT_BY_YEAR = 32
-    const val SORT_BY_SONGS = 64
-    const val SORT_BY_ALBUMS = 128
+    const val SORT_BY_DATE_MODIFIED = 32
+    const val SORT_BY_YEAR = 64
+    const val SORT_BY_SONGS = 128
+    const val SORT_BY_ALBUMS = 256
+
+    const val LIST_CHILD = "list_child"
+    const val ALBUM_TAB = "ALBUM"
+    const val ARTIST_TAB = "ARTIST"
+    const val GENRE_TAB = "GENRE"
 
     const val SONG_ID = "song_id"
-    const val ALBUM_ID = "album_id"
-    const val ARTIST_ID = "artist_id"
     const val RESTART_PLAYER = "restart_player"
-
-    const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
 
     // Notification
     private const val PATH = "com.mohammadkk.mymusicplayer.action."

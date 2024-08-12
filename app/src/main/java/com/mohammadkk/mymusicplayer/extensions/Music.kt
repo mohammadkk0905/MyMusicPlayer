@@ -43,8 +43,8 @@ fun Int.toFormattedDuration(isSeekBar: Boolean): String {
         }
     }
 }
-fun Int.toFormattedDate(): String = try {
-    val date = Date(this * 1000L)
+fun Long.toFormattedDate(): String = try {
+    val date = Date(this * 1000)
     DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, Locale.getDefault()).format(date)
 } catch (e: Exception) {
     ""

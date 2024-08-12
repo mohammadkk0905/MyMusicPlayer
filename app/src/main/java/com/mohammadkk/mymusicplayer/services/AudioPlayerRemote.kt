@@ -34,6 +34,9 @@ object AudioPlayerRemote {
         }
         return null
     }
+    fun broadcastStatusRestore() {
+        musicService?.broadcastStatusRestore()
+    }
     fun playPreviousSong() {
         musicService?.onHandlePrevious()
     }

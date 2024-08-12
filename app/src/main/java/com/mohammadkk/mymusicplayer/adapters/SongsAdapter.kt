@@ -139,10 +139,10 @@ class SongsAdapter(
                     context.getString(
                         R.string.duration_date_symbol,
                         song.duration.toFormattedDuration(false),
-                        song.dateAdded.toFormattedDate()
+                        song.dateModified.toFormattedDate()
                     )
                 } else {
-                    song.dateAdded.toFormattedDate()
+                    song.dateModified.toFormattedDate()
                 }
                 image.bind(song, R.drawable.ic_audiotrack)
                 root.setOnClickListener {

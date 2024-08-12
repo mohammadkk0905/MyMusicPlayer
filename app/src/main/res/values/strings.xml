@@ -14,6 +14,7 @@
     </plurals>
     <string name="albums">Albums</string>
     <string name="artists">Artists</string>
+    <string name="genres">Genres</string>
     <string name="empty">Empty</string>
     <string name="no_results_found">No results found</string>
     <string name="no_songs">You have no songs</string>
@@ -26,8 +27,10 @@
     <string name="title">Title</string>
     <string name="album">Album</string>
     <string name="artist">Artist</string>
+    <string name="genre">Genre</string>
     <string name="duration">Duration</string>
     <string name="date_added">Date Added</string>
+    <string name="date_modified">Date modified</string>
     <string name="song_count">Number of songs</string>
     <string name="album_count">Number of albums</string>
     <string name="year">Year</string>

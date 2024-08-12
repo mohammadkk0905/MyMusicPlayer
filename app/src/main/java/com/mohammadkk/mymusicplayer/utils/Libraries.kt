@@ -1,13 +1,16 @@
 package com.mohammadkk.mymusicplayer.utils
 
+import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio
+import android.provider.MediaStore.Audio.Genres
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.models.Album
 import com.mohammadkk.mymusicplayer.models.Artist
+import com.mohammadkk.mymusicplayer.models.Genre
 import com.mohammadkk.mymusicplayer.models.Song
 import java.io.File
 import java.text.Collator
@@ -15,6 +18,19 @@ import kotlin.math.abs
 
 object Libraries {
     private const val IS_MUSIC = "${Audio.AudioColumns.IS_MUSIC} = 1 AND ${Audio.AudioColumns.DURATION} >= 5000"
+    private val BASE_PROJECTION = arrayOf(
+        Audio.AudioColumns._ID,// 0
+        Audio.AudioColumns.ALBUM_ID,// 1
+        Audio.AudioColumns.ARTIST_ID,// 2
+        Audio.AudioColumns.TITLE,// 3
+        Audio.AudioColumns.ALBUM,// 4
+        Audio.AudioColumns.ARTIST,// 5
+        Audio.AudioColumns.DATA,// 6
+        Audio.AudioColumns.YEAR,// 7
+        Audio.AudioColumns.DURATION,// 8
+        Audio.AudioColumns.TRACK,// 9
+        Audio.AudioColumns.DATE_MODIFIED// 10
+    )
 
     fun fetchAllSongs(context: Context, selection: String?, selectionArgs: Array<String>?): List<Song> {
         val songs = arrayListOf<Song>()
@@ -50,19 +66,6 @@ object Libraries {
         } else {
             Audio.Media.EXTERNAL_CONTENT_URI
         }
-        val projection = arrayOf(
-            Audio.AudioColumns._ID,// 0
-            Audio.AudioColumns.ALBUM_ID,// 1
-            Audio.AudioColumns.ARTIST_ID,// 2
-            Audio.AudioColumns.TITLE,// 3
-            Audio.AudioColumns.ALBUM,// 4
-            Audio.AudioColumns.ARTIST,// 5
-            Audio.AudioColumns.DATA,// 6
-            Audio.AudioColumns.YEAR,// 7
-            Audio.AudioColumns.DURATION,// 8
-            Audio.AudioColumns.DATE_ADDED,// 9
-            Audio.AudioColumns.DATE_MODIFIED// 10
-        )
         val ms = if (selection != null && selection.trim { it <= ' ' } != "") {
             "$IS_MUSIC AND $selection"
         } else {
@@ -70,9 +73,9 @@ object Libraries {
         }
         return try {
             context.contentResolver.query(
-                uri, projection,
+                uri, BASE_PROJECTION,
                 ms, selectionValues,
-                Audio.Media.DEFAULT_SORT_ORDER
+                BaseSettings.getInstance().songsSortingAtName
             )
         } catch (ex: SecurityException) {
             return null
@@ -97,7 +100,7 @@ object Libraries {
             path = cursor.getString(6) ?: "",
             year = cursor.getInt(7),
             duration = cursor.getInt(8),
-            dateAdded = cursor.getInt(9),
+            trackNumber = cursor.getInt(9),
             dateModified = cursor.getLong(10)
         )
     }
@@ -144,19 +147,31 @@ object Libraries {
         if (songs.isNullOrEmpty()) return emptyList()
         val sortOrder = BaseSettings.getInstance().songsSorting
         val collator = Collator.getInstance()
-        val comparator = Comparator<Song> { o1, o2 ->
-            var result = when (abs(sortOrder)) {
-                Constant.SORT_BY_TITLE -> collator.compare(o1.title, o2.title)
-                Constant.SORT_BY_ALBUM -> collator.compare(o1.album, o2.album)
-                Constant.SORT_BY_ARTIST-> collator.compare(o1.artist, o2.artist)
-                Constant.SORT_BY_DURATION -> o2.duration.compareTo(o1.duration)
-                Constant.SORT_BY_DATE_ADDED -> o2.dateAdded.compareTo(o1.dateAdded)
-                else -> return@Comparator 0
+        return when (abs(sortOrder)) {
+            Constant.SORT_BY_TITLE -> songs.sortedWith { s1, s2 ->
+                if (sortOrder > 0) {
+                    collator.compare(s1.title, s2.title)
+                } else {
+                    collator.compare(s2.title, s1.title)
+                }
             }
-            if (sortOrder < 0) result *= -1
-            return@Comparator result
+            Constant.SORT_BY_ALBUM -> songs.sortedWith { s1, s2 ->
+                if (sortOrder > 0) {
+                    collator.compare(s1.album, s2.album)
+                } else {
+                    collator.compare(s2.album, s1.album)
+                }
+
+            }
+            Constant.SORT_BY_ARTIST -> songs.sortedWith { s1, s2 ->
+                if (sortOrder > 0) {
+                    collator.compare(s1.artist, s2.artist)
+                } else {
+                    collator.compare(s2.artist, s1.artist)
+                }
+            }
+            else -> songs
         }
-        return songs.sortedWith(comparator)
     }
     fun fetchSongsByAlbumId(context: Context, id: Long): List<Song> {
         val selection = "${Audio.AudioColumns.ALBUM_ID} = ?"
@@ -168,12 +183,14 @@ object Libraries {
         val selectionArgs = arrayOf(id.toString())
         return fetchAllSongs(context, selection, selectionArgs)
     }
+    fun fetchSongsByGenreId(context: Context, id: Long): List<Song> {
+        return fetchAllSongs(makeGenreSongCursor(context.contentResolver, id))
+    }
     fun fetchSongsByOtg(context: Context): List<Song> {
         val otgPath = BaseSettings.getInstance().otgPartition
         if (otgPath.isEmpty()) return emptyList()
         val files = FileUtils.listFilesDeep(File(otgPath), FileUtils.AUDIO_FILE_FILTER)
         return files.mapIndexed { index, file ->
-            val date = file.lastModified()
             Song(
                 id = index.toLong(),
                 albumId = 0L,
@@ -184,9 +201,72 @@ object Libraries {
                 path = file.path,
                 year = 0,
                 duration = 0,
-                dateAdded = date.toInt(),
-                dateModified = date
+                trackNumber = 0,
+                dateModified = file.lastModified()
             )
+        }
+    }
+    fun genres(context: Context): List<Genre> {
+        val resolver = context.contentResolver
+        return getGenresFromCursor(resolver, makeGenreCursor(resolver))
+    }
+    private fun getGenresFromCursor(resolver: ContentResolver, cursor: Cursor?): List<Genre> {
+        val genres = arrayListOf<Genre>()
+        cursor?.use {
+            if (cursor.moveToFirst()) {
+                do {
+                    val genre = getGenreFromCursor(resolver, cursor)
+                    if (genre.songCount > 0) genres.add(genre)
+                } while (cursor.moveToNext())
+            }
+        }
+        return genres
+    }
+    private fun getGenreFromCursor(resolver: ContentResolver, cursor: Cursor): Genre {
+        val id = cursor.getLong(0)
+        val name = cursor.getString(1) ?: ""
+        val songCount = getSongCount(resolver, id)
+        return Genre(id, name, songCount)
+    }
+    private fun getSongCount(resolver: ContentResolver, genreId: Long): Int {
+        resolver.query(
+            Genres.Members.getContentUri("external", genreId),
+            null, null, null, null
+        ).use {
+            return it?.count ?: 0
+        }
+    }
+    fun songByGenre(resolver: ContentResolver, genreId: Long): Song {
+        val cursor = makeGenreSongCursor(resolver, genreId)
+        val song = if (cursor != null && cursor.moveToFirst()) {
+            getSongFromCursorImpl(cursor)
+        } else {
+            Song.emptySong
+        }
+        cursor?.close()
+        return song
+    }
+    private fun makeGenreSongCursor(resolver: ContentResolver, genreId: Long): Cursor? {
+        return try {
+            resolver.query(
+                Genres.Members.getContentUri("external", genreId),
+                BASE_PROJECTION, IS_MUSIC, null,
+                Audio.Media.DEFAULT_SORT_ORDER
+            )
+        } catch (e: Exception) {
+            return null
+        }
+    }
+    private fun makeGenreCursor(resolver: ContentResolver): Cursor? {
+        val projection = arrayOf(Genres._ID, Genres.NAME)
+        return try {
+            resolver.query(
+                Genres.EXTERNAL_CONTENT_URI,
+                projection, null, null,
+                Genres.DEFAULT_SORT_ORDER
+            )
+        } catch (e: SecurityException) {
+            null
         }
     }
     fun getSectionName(mediaTitle: String?, stripPrefix: Boolean = false): String {

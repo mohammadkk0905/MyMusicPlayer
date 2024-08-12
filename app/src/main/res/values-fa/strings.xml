@@ -14,6 +14,7 @@
     </plurals>
     <string name="albums">آلبوم‌ها</string>
     <string name="artists">هنرمندان</string>
+    <string name="genres">سبک‌ها</string>
     <string name="empty">خالی</string>
     <string name="no_results_found">نتیجه ای یافت نشد</string>
     <string name="no_songs">شما هیچ آهنگی ندارید</string>
@@ -26,8 +27,10 @@
     <string name="title">عنوان</string>
     <string name="album">آلبوم</string>
     <string name="artist">هنرمند</string>
+    <string name="genre">سبک‌</string>
     <string name="duration">مدت زمان</string>
-    <string name="date_added">تاریخ اضافه شدن</string>
+    <string name="date_added">تاریخ اضافه‌شدن</string>
+    <string name="date_modified">تاریخ اصلاح</string>
     <string name="song_count">تعداد آهنگ</string>
     <string name="album_count">تعداد آلبوم</string>
     <string name="year">سال</string>

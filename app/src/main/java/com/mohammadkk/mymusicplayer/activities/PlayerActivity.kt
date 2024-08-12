@@ -63,7 +63,7 @@ class PlayerActivity : BaseActivity() {
             }
         } else {
             isGlobalPlayAnim = false
-            sendIntent(Constant.BROADCAST_STATUS)
+            AudioPlayerRemote.broadcastStatusRestore()
         }
     }
     private fun initializeViewModel() {

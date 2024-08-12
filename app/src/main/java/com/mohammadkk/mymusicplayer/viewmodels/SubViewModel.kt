@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.utils.Libraries
@@ -27,8 +28,9 @@ class SubViewModel(application: Application) : AndroidViewModel(application) {
     fun updateList(modePair: Pair<String, Long>) = viewModelScope.launch(Dispatchers.IO) {
         val songs = Libraries.getSortedSongs(
             when (modePair.first) {
-                "ALBUM" -> Libraries.fetchSongsByAlbumId(context, modePair.second)
-                "ARTIST" -> Libraries.fetchSongsByArtistId(context, modePair.second)
+                Constant.ALBUM_TAB -> Libraries.fetchSongsByAlbumId(context, modePair.second)
+                Constant.ARTIST_TAB  -> Libraries.fetchSongsByArtistId(context, modePair.second)
+                Constant.GENRE_TAB -> Libraries.fetchSongsByGenreId(context, modePair.second)
                 else -> Libraries.fetchSongsByOtg(context)
             }
         )

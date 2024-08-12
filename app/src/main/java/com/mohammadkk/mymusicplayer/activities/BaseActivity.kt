@@ -108,19 +108,8 @@ abstract class BaseActivity : AppCompatActivity() {
             }
         }
     }
-    private fun isRootUri(uri: Uri): Boolean {
-        return uri.lastPathSegment?.endsWith(":") ?: false
+    open fun onReloadLibrary(tabIndex: Int?) {
     }
-    private fun isInternalStorage(uri: Uri): Boolean {
-        val documentId = DocumentsContract.getTreeDocumentId(uri)
-        return isExternalStorageDocument(uri) && documentId.contains("primary")
-    }
-    private fun isExternalStorageDocument(uri: Uri): Boolean {
-        return Constant.EXTERNAL_STORAGE_AUTHORITY == uri.authority
-    }
-    open fun onReloadLibrary(mode: String?) {
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         AudioPlayerRemote.unbindFromService(serviceToken)

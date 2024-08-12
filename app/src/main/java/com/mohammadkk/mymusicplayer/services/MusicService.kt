@@ -165,17 +165,18 @@ class MusicService : Service(), MusicPlayer.PlaybackListener {
             Constant.SKIP_FORWARD -> onSkip(true)
             Constant.UPDATE_QUEUE_SIZE -> updateMediaSession {}
             Constant.REFRESH_LIST -> onHandleRefreshList()
-            Constant.BROADCAST_STATUS -> {
-                broadcastSongStateChange(isPlaying())
-                broadcastSongChange()
-                broadcastSongProgress(mPlayer?.position() ?: 0)
-            }
+            Constant.BROADCAST_STATUS -> broadcastStatusRestore()
         }
         MediaButtonReceiver.handleIntent(mMediaSession!!, intent)
         if (action != Constant.DISMISS && action != Constant.FINISH) {
             startForegroundOrNotify()
         }
         return START_NOT_STICKY
+    }
+    fun broadcastStatusRestore() {
+        broadcastSongStateChange(isPlaying())
+        broadcastSongChange()
+        broadcastSongProgress(mPlayer?.position() ?: 0)
     }
     private fun initializeService(intent: Intent?) {
         mSongs = getQueuedSongs()

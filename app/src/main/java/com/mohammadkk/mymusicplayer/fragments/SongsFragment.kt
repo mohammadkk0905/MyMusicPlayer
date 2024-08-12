@@ -2,7 +2,6 @@ package com.mohammadkk.mymusicplayer.fragments
 
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
@@ -21,17 +20,13 @@ import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.abs
 import kotlin.random.Random.Default.nextInt
 
-class SongsFragment : Fragment(R.layout.fragment_songs), SearchView.OnQueryTextListener {
+class SongsFragment : Fragment(R.layout.fragment_songs) {
     private lateinit var binding: FragmentSongsBinding
     private val musicViewModel: MusicViewModel by activityViewModels()
     private val settings = BaseSettings.getInstance()
     private var songsAdapter: SongsAdapter? = null
     private var unchangedList = listOf<Song>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        musicViewModel.fragmentLibraries[0] = this
-    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentSongsBinding.bind(view)
@@ -56,6 +51,7 @@ class SongsFragment : Fragment(R.layout.fragment_songs), SearchView.OnQueryTextL
             }
         }
         collectImmediately(musicViewModel.songsList, ::updateList)
+        collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
         binding.fragRefresher.setOnRefreshListener {
             binding.fragRefresher.postDelayed({
                 musicViewModel.updateLibraries()
@@ -104,22 +100,22 @@ class SongsFragment : Fragment(R.layout.fragment_songs), SearchView.OnQueryTextL
             if (isShuffle) R.string.shuffle_enabled else R.string.shuffle_disabled
         )
     }
-    override fun onQueryTextSubmit(query: String?): Boolean {
-        handleSearchAdapter(query)
-        return false
-    }
-    override fun onQueryTextChange(newText: String?): Boolean {
-        handleSearchAdapter(newText)
-        return false
-    }
-    private fun handleSearchAdapter(query: String?) {
-        songsAdapter?.swapDataSet(if (!query.isNullOrEmpty()) {
-            val q = query.lowercase()
-            unchangedList.filter { it.title.lowercase().contains(q) }
-        } else {
-            unchangedList
-        })
-        handleEmptyList(true)
+    private fun handleSearchAdapter(search: Triple<Int, Boolean, String>) {
+        if (search.first == 0) {
+            if (!search.second) {
+                updateAdapter(if (search.third.isNotEmpty()) {
+                    val q = search.third.lowercase()
+                    unchangedList.filter { it.title.lowercase().contains(q) }
+                } else {
+                    unchangedList
+                })
+                handleEmptyList(true)
+            } else {
+                musicViewModel.setSearch(-1, true, null)
+                updateAdapter(unchangedList)
+                handleEmptyList(false)
+            }
+        }
     }
     private fun handleEmptyList(isSearch: Boolean) {
         if (songsAdapter?.itemCount == 0) {

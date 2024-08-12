@@ -37,6 +37,7 @@ import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.fragments.AlbumsFragment
 import com.mohammadkk.mymusicplayer.fragments.ArtistsFragment
+import com.mohammadkk.mymusicplayer.fragments.GenresFragment
 import com.mohammadkk.mymusicplayer.fragments.SongsFragment
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicService
@@ -135,7 +136,10 @@ class MainActivity : BaseActivity() {
         binding.mainPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                invalidateOptionsMenu()
+                if (musicViewModel.searchHandle.value.first != -1) {
+                    musicViewModel.setSearch(true, null)
+                    invalidateOptionsMenu()
+                }
             }
             override fun onPageScrolled(
                 position: Int,
@@ -158,7 +162,8 @@ class MainActivity : BaseActivity() {
             val mInfoTab = when (pos) {
                 0 -> intArrayOf(R.drawable.ic_audiotrack, R.string.songs)
                 1 -> intArrayOf(R.drawable.ic_library_music, R.string.albums)
-                else -> intArrayOf(R.drawable.ic_person, R.string.artists)
+                2 -> intArrayOf(R.drawable.ic_person, R.string.artists)
+                else -> intArrayOf(R.drawable.ic_genre, R.string.genres)
             }
             tab.setCustomView(R.layout.bottom_tab_item).apply {
                 customView?.findViewById<ImageView>(R.id.tab_item_icon)?.setImageResource(mInfoTab[0])
@@ -180,8 +185,16 @@ class MainActivity : BaseActivity() {
         menuInflater.inflate(R.menu.menu_main_libraries, menu)
         menu?.run {
             val searchView = findItem(R.id.action_search).actionView as SearchView
-            val callbackSearch = musicViewModel.fragmentLibraries[binding.mainPager.currentItem]
-            if (callbackSearch != null) searchView.setOnQueryTextListener(callbackSearch)
+            searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    musicViewModel.setSearch(binding.mainPager.currentItem, false, query)
+                    return false
+                }
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    musicViewModel.setSearch(binding.mainPager.currentItem, false, newText)
+                    return false
+                }
+            })
             searchView.setOnSearchClickListener {
                 binding.mainPager.isUserInputEnabled = false
             }
@@ -196,12 +209,10 @@ class MainActivity : BaseActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_order_by -> {
-                val sortMode = when (binding.mainPager.currentItem) {
-                    0 -> Constant.SONG_ID
-                    1 -> Constant.ALBUM_ID
-                    else -> Constant.ARTIST_ID
-                }
-                ChangeSortingDialog.showDialog(supportFragmentManager, sortMode)
+                ChangeSortingDialog.showDialog(
+                    supportFragmentManager,
+                    binding.mainPager.currentItem
+                )
             }
             R.id.action_recheck_library -> ScanMediaFoldersDialog.create(
                 false, supportFragmentManager
@@ -262,33 +273,27 @@ class MainActivity : BaseActivity() {
             }
         }
     }
-    override fun onReloadLibrary(mode: String?) {
-        if (mode == null) {
+    override fun onReloadLibrary(tabIndex: Int?) {
+        if (tabIndex == null) {
             musicViewModel.updateLibraries()
         } else {
-            musicViewModel.forceReload(when (mode) {
-                Constant.SONG_ID -> 0
-                Constant.ALBUM_ID -> 1
-                else -> 2
-            })
+            musicViewModel.forceReload(tabIndex)
         }
         if (MusicService.isMusicPlayer()) {
             sendIntent(Constant.REFRESH_LIST)
         }
     }
     private class SlidePagerAdapter(fm: FragmentManager, le: Lifecycle) : FragmentStateAdapter(fm, le) {
-        private val fragments = mutableListOf<Fragment>()
-
-        init {
-            fragments.add(SongsFragment())
-            fragments.add(AlbumsFragment())
-            fragments.add(ArtistsFragment())
-        }
         override fun getItemCount(): Int {
-            return fragments.size
+            return 4
         }
         override fun createFragment(position: Int): Fragment {
-            return fragments[position]
+            return when (position) {
+                0 -> SongsFragment()
+                1 -> AlbumsFragment()
+                2 -> ArtistsFragment()
+                else -> GenresFragment()
+            }
         }
         override fun getItemId(position: Int): Long {
             return position.toLong()
