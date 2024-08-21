@@ -33,14 +33,12 @@ import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.isMassUsbDeviceConnected
 import com.mohammadkk.mymusicplayer.extensions.reduceDragSensitivity
-import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.fragments.AlbumsFragment
 import com.mohammadkk.mymusicplayer.fragments.ArtistsFragment
 import com.mohammadkk.mymusicplayer.fragments.GenresFragment
 import com.mohammadkk.mymusicplayer.fragments.SongsFragment
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
-import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.max
 import kotlin.math.min
@@ -48,11 +46,15 @@ import kotlin.math.min
 class MainActivity : BaseActivity() {
     private lateinit var binding: ActivityMainBinding
     private val musicViewModel: MusicViewModel by viewModels()
+    private var permissionMode = '0'
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         onBackPressedDispatcher.addCallback(this, true) {
             onBackPressedCompat()
+        }
+        if (savedInstanceState != null) {
+            permissionMode = savedInstanceState.getChar("permission_mode")
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -65,13 +67,13 @@ class MainActivity : BaseActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(permission), Constant.PERMISSION_REQUEST_STORAGE)
         }
         binding.mainActionBar.setNavigationOnClickListener {
-            if (MusicService.isPlaying()) {
+            if (AudioPlayerRemote.isPlaying) {
                 MaterialAlertDialogBuilder(this)
                     .setCancelable(false)
                     .setTitle(R.string.app_name)
                     .setMessage(R.string.on_close_activity)
                     .setPositiveButton(R.string.yes) { _, _ ->
-                        if (MusicService.isPlaying()) AudioPlayerRemote.quit()
+                        AudioPlayerRemote.quit()
                         finishAndRemoveTask()
                     }
                     .setNegativeButton(R.string.no) { _, _ ->
@@ -80,7 +82,7 @@ class MainActivity : BaseActivity() {
                     .setNeutralButton(android.R.string.cancel, null)
                     .show()
             } else {
-                if (MusicService.isMusicPlayer()) AudioPlayerRemote.quit()
+                AudioPlayerRemote.quit()
                 finishAndRemoveTask()
             }
         }
@@ -125,6 +127,7 @@ class MainActivity : BaseActivity() {
                 intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                 intent.data = Uri.fromParts("package", applicationContext.packageName, null)
                 startActivity(intent)
+                permissionMode = '1'
             }.show()
         }
     }
@@ -174,6 +177,17 @@ class MainActivity : BaseActivity() {
         if (oldIndex in 0..2) {
             binding.mainPager.setCurrentItem(oldIndex, false)
             intent.removeExtra("song_tab")
+        }
+    }
+    override fun onShowOpenMiniPlayer(isShow: Boolean) {
+        if (isShow) {
+            if (binding.nowPlayerFrag.visibility != View.VISIBLE) {
+                binding.nowPlayerFrag.visibility = View.VISIBLE
+            }
+        } else {
+            if (binding.nowPlayerFrag.visibility != View.GONE) {
+                binding.nowPlayerFrag.visibility = View.GONE
+            }
         }
     }
     private fun setupRequires() {
@@ -235,7 +249,7 @@ class MainActivity : BaseActivity() {
                         if (settings.coverMode != which) {
                             settings.coverMode = which
                             reactivity()
-                            if (MusicService.isMusicPlayer()) AudioPlayerRemote.updateAudioNotification()
+                            AudioPlayerRemote.updateNotification()
                         }
                         dialog.dismiss()
                     }
@@ -261,16 +275,17 @@ class MainActivity : BaseActivity() {
             settings.actionModeIndex = -1
         }
     }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putChar("permission_mode", permissionMode)
+    }
     override fun onResume() {
         super.onResume()
-        if (MusicService.isMusicPlayer() && MusicService.mCurrSong != null) {
-            if (binding.nowPlayerFrag.visibility != View.VISIBLE) {
-                binding.nowPlayerFrag.visibility = View.VISIBLE
+        if (permissionMode == '1') {
+            if (hasPermission(Constant.STORAGE_PERMISSION)) {
+                setupRequires()
             }
-        } else {
-            if (binding.nowPlayerFrag.visibility != View.GONE) {
-                binding.nowPlayerFrag.visibility = View.GONE
-            }
+            permissionMode = '0'
         }
     }
     override fun onReloadLibrary(tabIndex: Int?) {
@@ -278,9 +293,6 @@ class MainActivity : BaseActivity() {
             musicViewModel.updateLibraries()
         } else {
             musicViewModel.forceReload(tabIndex)
-        }
-        if (MusicService.isMusicPlayer()) {
-            sendIntent(Constant.REFRESH_LIST)
         }
     }
     private class SlidePagerAdapter(fm: FragmentManager, le: Lifecycle) : FragmentStateAdapter(fm, le) {

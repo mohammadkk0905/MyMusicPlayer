@@ -3,8 +3,13 @@ package com.mohammadkk.mymusicplayer.extensions
 import android.app.PendingIntent
 import android.content.ContentUris
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.media.MediaPlayer
+import android.media.PlaybackParams
 import android.net.Uri
 import android.provider.MediaStore
+import android.support.v4.media.MediaDescriptionCompat
+import android.support.v4.media.session.MediaSessionCompat.QueueItem
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import com.mohammadkk.mymusicplayer.Constant
@@ -14,20 +19,27 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 
+fun MediaPlayer.setPlaybackSpeedPitch(speed: Float, pitch: Float) {
+    if (Constant.isMarshmallowPlus()) {
+        val wasPlaying = isPlaying
+        playbackParams = PlaybackParams().setSpeed(speed).setPitch(pitch)
+        if (!wasPlaying) pause()
+    }
+}
 fun Song.toContentUri(): Uri {
     if (!isOTGMode()) {
         return ContentUris.withAppendedId(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id
         )
     }
-    return path.toUri()
+    return data.toUri()
 }
 fun Long.toAlbumArtURI(): Uri {
     return ContentUris.withAppendedId(
         "content://media/external/audio/albumart".toUri(), this
     )
 }
-fun Int.toFormattedDuration(isSeekBar: Boolean): String {
+fun Long.toFormattedDuration(isSeekBar: Boolean): String {
     var minutes = this / 1000 / 60
     val seconds = this / 1000 % 60
     return if (minutes < 60) {
@@ -60,11 +72,11 @@ fun Int.toImmutableFlag(): Int {
     return flags
 }
 fun Song.toProviderUri(context: Context): Uri {
-    return if (isOTGMode() || path.startsWith("content://")) {
-        Uri.parse(path)
+    return if (isOTGMode() || data.startsWith("content://")) {
+        Uri.parse(data)
     } else {
         try {
-            val file = File(path)
+            val file = File(data)
             if (Constant.isNougatPlus()) {
                 val applicationId = context.packageName ?: context.applicationContext.packageName
                 FileProvider.getUriForFile(context, "$applicationId.provider", file)
@@ -72,5 +84,16 @@ fun Song.toProviderUri(context: Context): Uri {
         } catch (e: IllegalArgumentException) {
             toContentUri()
         }
+    }
+}
+fun ArrayList<Song>.toMediaSessionQueue(): List<QueueItem> {
+    return map { song ->
+        val mediaDescription = MediaDescriptionCompat.Builder()
+            .setMediaId(song.id.toString())
+            .setTitle(song.title)
+            .setSubtitle(song.artist)
+            .setIconUri(song.albumId.toAlbumArtURI())
+            .build()
+        QueueItem(mediaDescription, song.hashCode().toLong())
     }
 }

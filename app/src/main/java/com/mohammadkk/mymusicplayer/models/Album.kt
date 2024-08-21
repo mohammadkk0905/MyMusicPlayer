@@ -2,7 +2,7 @@ package com.mohammadkk.mymusicplayer.models
 
 data class Album(
     val id: Long,
-    var duration: Int,
+    var duration: Long,
     val songs: MutableList<Song>
 ) {
     val title: String get() = getSafeSong().album

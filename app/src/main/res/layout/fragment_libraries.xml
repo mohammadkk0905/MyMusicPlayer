@@ -10,7 +10,7 @@
         android:id="@+id/fragRefresher"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollRecyclerView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/listRv"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

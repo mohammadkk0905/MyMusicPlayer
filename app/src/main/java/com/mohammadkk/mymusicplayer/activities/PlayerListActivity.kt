@@ -32,16 +32,14 @@ import com.mohammadkk.mymusicplayer.extensions.errorToast
 import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
-import com.mohammadkk.mymusicplayer.extensions.sendIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
 import com.mohammadkk.mymusicplayer.models.Song
-import com.mohammadkk.mymusicplayer.services.MusicService
+import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.PlaybackStateManager
 import com.mohammadkk.mymusicplayer.services.ScannerService
 import com.mohammadkk.mymusicplayer.viewmodels.SubViewModel
 import kotlin.math.abs
-import kotlin.random.Random
 
 class PlayerListActivity : BaseActivity() {
     private lateinit var binding: ActivityPlayerListBinding
@@ -57,7 +55,7 @@ class PlayerListActivity : BaseActivity() {
                     Log.d("PlayerListActivity", "Usb otg connected")
                 }
                 UsbManager.ACTION_USB_DEVICE_DETACHED -> {
-                    if (MusicService.isMusicPlayer()) sendIntent(Constant.FINISH)
+                    AudioPlayerRemote.quit()
                     finish()
                 }
             }
@@ -84,22 +82,8 @@ class PlayerListActivity : BaseActivity() {
             }, 200)
         }
         binding.mainActionbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        binding.btnPlayerListDetails.setOnClickListener {
-            val itemsCount = songsAdapter?.itemCount ?: 0
-            if (itemsCount > 0) {
-                settings.isShuffleEnabled = false
-                songsAdapter!!.startPlayer(0)
-            }
-        }
-        binding.btnShuffleListDetails.setOnClickListener {
-            val itemsCount = songsAdapter?.itemCount ?: 0
-            if (itemsCount > 0) {
-                settings.isShuffleEnabled = true
-                songsAdapter!!.startPlayer(Random.nextInt(itemsCount))
-            } else {
-                settings.isShuffleEnabled = false
-            }
-        }
+        binding.btnPlayerListDetails.setOnClickListener { songsAdapter?.startFirstPlayer() }
+        binding.btnShuffleListDetails.setOnClickListener { songsAdapter?.startShufflePlayer() }
     }
     private fun getInputMethod() {
         val metrics = resources.displayMetrics
@@ -281,11 +265,9 @@ class PlayerListActivity : BaseActivity() {
             }
             PlaybackStateManager.getInstance().onReloadLibraries()
         }
-        if (MusicService.isMusicPlayer()) sendIntent(Constant.REFRESH_LIST)
     }
-    override fun onResume() {
-        super.onResume()
-        if (MusicService.isMusicPlayer() && MusicService.mCurrSong != null) {
+    override fun onShowOpenMiniPlayer(isShow: Boolean) {
+        if (isShow) {
             if (binding.nowPlayerFrag.visibility != View.VISIBLE) {
                 binding.mainRelative.updatePadding(
                     left = 0, top = 0, right = 0,

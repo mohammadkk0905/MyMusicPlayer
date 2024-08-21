@@ -1,34 +1,43 @@
 package com.mohammadkk.mymusicplayer.models
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class Song(
     val id: Long,
-    val albumId: Long,
-    val artistId: Long,
     val title: String,
-    val album: String,
-    val artist: String,
-    val path: String,
+    val track: Int,
     val year: Int,
-    val duration: Int,
-    val trackNumber: Int,
-    val dateModified: Long
-) {
+    val duration: Long,
+    val data: String,
+    val dateModified: Long,
+    val albumId: Long,
+    val album: String,
+    val artistId: Long,
+    val artist: String,
+    val composer: String?,
+    val albumArtist: String?
+) : Parcelable {
     fun isOTGMode(): Boolean {
         return albumId == 0L || artistId == 0L
     }
     companion object {
+        @JvmStatic
         val emptySong = Song(
             id = -1,
-            albumId = -1,
-            artistId = -1,
             title = "",
-            album = "",
-            artist = "",
-            path = "",
+            track = -1,
             year = -1,
             duration = -1,
-            trackNumber = -1,
-            dateModified = -1
+            data = "",
+            dateModified = -1,
+            albumId = -1,
+            album = "",
+            artistId = -1,
+            artist = "",
+            composer = "",
+            albumArtist = ""
         )
     }
 }

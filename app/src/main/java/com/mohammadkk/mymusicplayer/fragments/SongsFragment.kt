@@ -2,7 +2,6 @@ package com.mohammadkk.mymusicplayer.fragments
 
 import android.os.Bundle
 import android.view.View
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import com.mohammadkk.mymusicplayer.BaseSettings
@@ -11,17 +10,20 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentSongsBinding
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
+import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Song
-import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollRecyclerView
+import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScroller
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollerBuilder
 import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.abs
-import kotlin.random.Random.Default.nextInt
 
-class SongsFragment : Fragment(R.layout.fragment_songs) {
-    private lateinit var binding: FragmentSongsBinding
+class SongsFragment : ABaseFragment(R.layout.fragment_songs) {
+    private var _binding: FragmentSongsBinding? = null
+    private val binding get() = _binding!!
     private val musicViewModel: MusicViewModel by activityViewModels()
     private val settings = BaseSettings.getInstance()
     private var songsAdapter: SongsAdapter? = null
@@ -29,26 +31,28 @@ class SongsFragment : Fragment(R.layout.fragment_songs) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentSongsBinding.bind(view)
+        _binding = FragmentSongsBinding.bind(view)
         binding.songsListView.apply {
             songsAdapter = SongsAdapter(requireActivity(), mutableListOf(), "MAIN")
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = songsAdapter
-            popupProvider = object : FastScrollRecyclerView.PopupProvider {
-                override fun getPopup(pos: Int): String {
-                    return getPopupText(pos)
-                }
-            }
-            listener = object : FastScrollRecyclerView.Listener {
-                override fun onFastScrollingChanged(isFastScrolling: Boolean) {
-                    if (isFastScrolling) {
-                        binding.fabShuffle.hide()
-                    } else {
-                        binding.fabShuffle.show()
+            FastScrollerBuilder(binding.songsListView)
+                .setPadding(0, 0, 0, 0)
+                .setPopupTextProvider(object : FastScroller.PopupTextProvider {
+                    override fun getPopupText(view: View, position: Int): CharSequence {
+                        return getPopupText(position)
                     }
-                }
-            }
+                })
+                .setFastScrollListener(object : FastScroller.Listener {
+                    override fun onFastScrollingChanged(isFastScrolling: Boolean) {
+                        if (isFastScrolling) {
+                            binding.fabShuffle.hide()
+                        } else {
+                            binding.fabShuffle.show()
+                        }
+                    }
+                }).build()
         }
         collectImmediately(musicViewModel.songsList, ::updateList)
         collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
@@ -59,16 +63,8 @@ class SongsFragment : Fragment(R.layout.fragment_songs) {
             }, 200)
         }
         binding.fabShuffle.setOnClickListener {
-            songsAdapter?.let { adapter ->
-                if (adapter.itemCount > 0) {
-                    settings.isShuffleEnabled = true
-                    adapter.startPlayer(nextInt(adapter.itemCount))
-                } else {
-                    settings.isShuffleEnabled = false
-                    binding.fabShuffle.hide()
-                }
-                initializeBtnShuffle()
-            }
+            songsAdapter?.startShufflePlayer()
+            initializeBtnShuffle()
         }
         initializeBtnShuffle()
     }
@@ -95,7 +91,7 @@ class SongsFragment : Fragment(R.layout.fragment_songs) {
         handleEmptyList(false)
     }
     private fun initializeBtnShuffle() {
-        val isShuffle = settings.isShuffleEnabled
+        val isShuffle = AudioPlayerRemote.isShuffleMode
         binding.fabShuffle.contentDescription = getString(
             if (isShuffle) R.string.shuffle_enabled else R.string.shuffle_disabled
         )
@@ -117,27 +113,43 @@ class SongsFragment : Fragment(R.layout.fragment_songs) {
             }
         }
     }
-    private fun handleEmptyList(isSearch: Boolean) {
+    private fun handleEmptyList(isSearch: Boolean) = _binding?.run {
         if (songsAdapter?.itemCount == 0) {
-            if (binding.empty.tag != "animated_alpha") {
-                binding.emptyText.setText(if (isSearch) R.string.no_results_found else R.string.no_songs)
-                binding.empty.visibility = View.VISIBLE
-                binding.empty.alpha = 0f
-                binding.empty.animate().alpha(1f).setDuration(200).withEndAction {
+            if (empty.tag != "animated_alpha") {
+                emptyText.setText(if (isSearch) R.string.no_results_found else R.string.no_songs)
+                empty.visibility = View.VISIBLE
+                empty.alpha = 0f
+                empty.animate().alpha(1f).setDuration(200).withEndAction {
                     binding.empty.alpha = 1f
                 }
-                binding.fabShuffle.visibility = View.INVISIBLE
-                binding.empty.tag = "animated_alpha"
+                fabShuffle.visibility = View.INVISIBLE
+                empty.tag = "animated_alpha"
             }
         } else {
-            binding.empty.visibility = View.GONE
-            binding.emptyText.setText(R.string.no_artists)
-            binding.fabShuffle.visibility = View.VISIBLE
-            binding.empty.tag = null
+            empty.visibility = View.GONE
+            emptyText.setText(R.string.no_artists)
+            fabShuffle.visibility = View.VISIBLE
+            empty.tag = null
         }
     }
     private fun updateAdapter(items: List<Song>) {
         songsAdapter?.swapDataSet(items)
         binding.fabShuffle.text = items.size.toString()
+    }
+    override fun onServiceConnected() {
+        songsAdapter?.setSelectedSong(AudioPlayerRemote.currentSong)
+    }
+    override fun onPlayingMetaChanged() {
+        songsAdapter?.setSelectedSong(AudioPlayerRemote.currentSong)
+    }
+    override fun onMediaStoreChanged() {
+        super.onMediaStoreChanged()
+        if (requireContext().hasPermission(Constant.STORAGE_PERMISSION)) {
+            musicViewModel.updateLibraries()
+        }
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

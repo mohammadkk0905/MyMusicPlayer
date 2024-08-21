@@ -8,6 +8,8 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import com.mohammadkk.mymusicplayer.databinding.ActivityStaterBinding
 
 class StaterActivity : AppCompatActivity() {
@@ -23,6 +25,7 @@ class StaterActivity : AppCompatActivity() {
         override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
         }
         override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+            migrated()
             startApp()
         }
         override fun onTransitionTrigger(motionLayout: MotionLayout?, triggerId: Int, positive: Boolean, progress: Float) {
@@ -45,6 +48,12 @@ class StaterActivity : AppCompatActivity() {
         ).toBundle()
         startActivity(intent, options)
         finishAfterTransition()
+    }
+    private fun migrated() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        if (prefs.contains("last_state_mode")) {
+            prefs.edit { remove("last_state_mode") }
+        }
     }
     override fun onDestroy() {
         super.onDestroy()

@@ -11,4 +11,5 @@
     <dimen name="fast_scroll_popup_min_width">78dp</dimen>
     <dimen name="fast_scroll_popup_min_height">64dp</dimen>
     <dimen name="fast_scroll_popup_padding_end">28dp</dimen>
+    <dimen name="notification_big_image_size">128dp</dimen>
 </resources>

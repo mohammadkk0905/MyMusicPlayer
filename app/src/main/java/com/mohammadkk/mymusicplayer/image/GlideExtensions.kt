@@ -1,10 +1,12 @@
 package com.mohammadkk.mymusicplayer.image
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
+import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.load.Key
@@ -13,7 +15,6 @@ import com.bumptech.glide.signature.MediaStoreSignature
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.extensions.applyColor
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.getDrawableCompat
 import com.mohammadkk.mymusicplayer.extensions.toAlbumArtURI
@@ -30,10 +31,10 @@ object GlideExtensions {
             Constant.COVER_MEDIA_STORE -> if (!song.isOTGMode()) {
                 song.albumId.toAlbumArtURI()
             } else {
-                AudioFileCover(song.path, song.albumId)
+                AudioFileCover(song.data, song.albumId)
             }
             else -> {
-                val path = if (!song.isOTGMode()) song.path else song.toContentUri().toString()
+                val path = if (!song.isOTGMode()) song.data else song.toContentUri().toString()
                 AudioFileCover(path, song.albumId)
             }
         }
@@ -62,11 +63,14 @@ object GlideExtensions {
                 context.getColorCompat(R.color.cyan_art)
             )
         }
-        val cover = context.getDrawableCompat(resId)
+        val cover = context.getDrawableCompat(resId).mutate()
         val index = (songId % 7).toInt()
-        return StyledDrawable(cover.applyColor(colors!![if (index >= 0) index else 0]))
+        return StyledDrawable(cover, colors!![if (index >= 0) index else 0])
     }
-    private class StyledDrawable(private val inner: Drawable) : Drawable() {
+    private class StyledDrawable(private val inner: Drawable, @ColorInt color: Int) : Drawable() {
+        init {
+            inner.setTintList(ColorStateList.valueOf(color))
+        }
         override fun draw(canvas: Canvas) {
             val adj = (bounds.width() / 4)
             inner.bounds.set(adj, adj, bounds.width() - adj, bounds.height() - adj)

@@ -2,7 +2,7 @@ package com.mohammadkk.mymusicplayer.extensions
 
 import android.app.Activity
 import android.app.Dialog
-import android.content.res.ColorStateList
+import android.graphics.PorterDuff
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.text.SpannableString
@@ -14,15 +14,16 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.core.graphics.drawable.DrawableCompat
-import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.mohammadkk.mymusicplayer.R
+import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
 import com.mohammadkk.mymusicplayer.models.Song
@@ -30,33 +31,6 @@ import com.mohammadkk.mymusicplayer.models.Song
 val Drawable.isRtl: Boolean
     get() = DrawableCompat.getLayoutDirection(this) == View.LAYOUT_DIRECTION_RTL
 
-fun View.isUnder(x: Float, y: Float, minTouchTargetSize: Int = 0): Boolean {
-    return isUnderImpl(x, left, right, (parent as View).width, minTouchTargetSize) &&
-            isUnderImpl(y, top, bottom, (parent as View).height, minTouchTargetSize)
-}
-private fun isUnderImpl(
-    position: Float,
-    viewStart: Int,
-    viewEnd: Int,
-    parentEnd: Int,
-    minTouchTargetSize: Int
-): Boolean {
-    val viewSize = viewEnd - viewStart
-    if (viewSize >= minTouchTargetSize) {
-        return position >= viewStart && position < viewEnd
-    }
-
-    var touchTargetStart = viewStart - (minTouchTargetSize - viewSize) / 2
-    if (touchTargetStart < 0) touchTargetStart = 0
-
-    var touchTargetEnd = touchTargetStart + minTouchTargetSize
-    if (touchTargetEnd > parentEnd) {
-        touchTargetEnd = parentEnd
-        touchTargetStart = touchTargetEnd - minTouchTargetSize
-        if (touchTargetStart < 0) touchTargetStart = 0
-    }
-    return position >= touchTargetStart && position < touchTargetEnd
-}
 fun ViewPager2.reduceDragSensitivity() {
     try {
         val recycler = ViewPager2::class.java.getDeclaredField("mRecyclerView")
@@ -70,23 +44,18 @@ fun ViewPager2.reduceDragSensitivity() {
         Log.e("MainActivity", e.stackTraceToString())
     }
 }
-fun ImageView.updateIconTint(@ColorInt color: Int) {
-    ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(color))
+fun CircularProgressIndicator.accentColor() {
+    val color = context.getAttrColorCompat(com.google.android.material.R.attr.colorPrimary)
+    setIndicatorColor(color)
+    trackColor = Constant.withAlpha(color, 0.2f)
 }
-fun ImageView.updatePlayingState(isPlaying: Boolean, isAnimation: Boolean) {
-    val defaultIcon =  if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-    val animateIcon =  if (isPlaying) R.drawable.anim_play_to_pause else R.drawable.anim_pause_to_play
-    if (!isAnimation) {
-        setImageResource(defaultIcon)
-    } else {
-        val drawableIcon = context.getDrawableCompat(animateIcon)
-        setImageDrawable(drawableIcon)
-        if (drawableIcon is Animatable) {
-            drawableIcon.start()
-        } else {
-            setImageResource(defaultIcon)
-        }
-    }
+fun ImageView.setAnimatedVectorDrawable(@DrawableRes resId: Int, animate: Boolean) {
+    val drawableIcon = AppCompatResources.getDrawable(context, resId)
+    val imageTag = tag as? Int
+    if (imageTag != null && imageTag == resId) return
+    tag = resId
+    setImageDrawable(drawableIcon)
+    if (animate && imageTag != null && drawableIcon is Animatable) drawableIcon.start()
 }
 fun ImageView.bind(song: Song, @DrawableRes placeholder: Int) {
     val songModel = GlideExtensions.getSongModel(song)
@@ -114,6 +83,13 @@ fun Drawable.applyColor(@ColorInt color: Int): Drawable {
         color, BlendModeCompat.SRC_IN
     )
     return copy
+}
+fun Drawable.createTintedDrawable(@ColorInt color: Int): Drawable {
+    var drawable = this
+    drawable = DrawableCompat.wrap(drawable.mutate())
+    drawable.setTintMode(PorterDuff.Mode.SRC_IN)
+    drawable.setTint(color)
+    return drawable
 }
 fun MenuItem.setTitleColor(@ColorInt color: Int) {
     if (title.isNullOrEmpty()) return

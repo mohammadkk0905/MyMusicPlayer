@@ -30,6 +30,7 @@
         android:paddingHorizontal="@dimen/spacing_small"
         android:textAlignment="viewStart"
         android:textAppearance="@style/TextAppearance.Audio.TitleMedium"
+        android:textColor="@color/sel_selectable_text_primary"
         app:layout_constraintBottom_toTopOf="@+id/tv_text"
         app:layout_constraintEnd_toStartOf="@+id/menu"
         app:layout_constraintStart_toEndOf="@+id/image"

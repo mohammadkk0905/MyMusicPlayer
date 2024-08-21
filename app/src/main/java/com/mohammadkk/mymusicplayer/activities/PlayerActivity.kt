@@ -1,35 +1,31 @@
 package com.mohammadkk.mymusicplayer.activities
 
-import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
+import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.viewModels
-import com.mohammadkk.mymusicplayer.BaseSettings
-import com.mohammadkk.mymusicplayer.Constant
+import androidx.core.widget.ImageViewCompat
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerBinding
 import com.mohammadkk.mymusicplayer.extensions.bind
-import com.mohammadkk.mymusicplayer.extensions.errorToast
 import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
-import com.mohammadkk.mymusicplayer.extensions.sendIntent
+import com.mohammadkk.mymusicplayer.extensions.setAnimatedVectorDrawable
 import com.mohammadkk.mymusicplayer.extensions.toast
-import com.mohammadkk.mymusicplayer.extensions.updateIconTint
-import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
+import com.mohammadkk.mymusicplayer.interfaces.IMusicServiceEventListener
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
-import com.mohammadkk.mymusicplayer.services.MusicService
-import com.mohammadkk.mymusicplayer.services.MusicService.Companion.isGlobalPlayAnim
+import com.mohammadkk.mymusicplayer.services.MusicProgressViewUpdate
 import com.mohammadkk.mymusicplayer.ui.MusicSeekBar
 import com.mohammadkk.mymusicplayer.utils.PlaybackRepeat
-import com.mohammadkk.mymusicplayer.viewmodels.PlaybackViewModel
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
-class PlayerActivity : BaseActivity() {
+class PlayerActivity : BaseActivity(), MusicProgressViewUpdate.Callback {
     private lateinit var binding: ActivityPlayerBinding
-    private val baseSettings get() = BaseSettings.getInstance()
-    private val playbackViewModel: PlaybackViewModel by viewModels()
+    private lateinit var musicProgressViewUpdate: MusicProgressViewUpdate
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,67 +33,37 @@ class PlayerActivity : BaseActivity() {
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.playbackToolbar)
+        musicProgressViewUpdate = MusicProgressViewUpdate(this)
+        addMusicServiceEventListener(musicServiceCallback)
         supportActionBar?.title = getString(R.string.playing)
         binding.playbackToolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         initializeSlider()
         initializeButtons()
-        val song = MusicService.mCurrSong
-        if (song == null || song.duration < 0) {
+    }
+    private fun updateSongInfo() {
+        val song = AudioPlayerRemote.currentSong
+        if (song.id == -1L || song.duration < 0) {
             toast(R.string.unknown_error_occurred)
             finish()
             return
         }
-        initializeViewModel()
         initializeSongInfo(song)
-        if (intent.hasExtra(Constant.RESTART_PLAYER)) {
-            intent.removeExtra(Constant.RESTART_PLAYER)
-            Intent(this, MusicService::class.java).apply {
-                putExtra(Constant.SONG_ID, song.id)
-                action = Constant.INIT
-                try {
-                    startService(this)
-                    setPlayPause(true)
-                } catch (e: Exception) {
-                    errorToast(e)
-                }
-            }
+    }
+    private fun initializeSongInfo(song: Song) = with(binding) {
+        playbackCover.bind(song, R.drawable.ic_audiotrack)
+        playbackSong.text = song.title
+        playbackAlbum.text = song.album
+        playbackArtist.text = song.artist
+        val indexPosition = if (AudioPlayerRemote.isShuffleMode) {
+            AudioPlayerRemote.playingQueue.indexOf(song)
         } else {
-            isGlobalPlayAnim = false
-            AudioPlayerRemote.broadcastStatusRestore()
+            AudioPlayerRemote.position
         }
-    }
-    private fun initializeViewModel() {
-        playbackViewModel.song.observe(this) {
-            if (it == null) {
-                finish()
-            } else {
-                initializeSongInfo(it)
-            }
-        }
-        playbackViewModel.isPlaying.observe(this) {
-            setPlayPause(it)
-        }
-        playbackViewModel.isPermission.observe(this) {
-            if (!it) {
-                toast(R.string.permission_storage_denied)
-                finish()
-            }
-        }
-        playbackViewModel.position.observe(this) {
-            binding.playbackSeekBar.positionMills = it
-        }
-    }
-    private fun initializeSongInfo(song: Song) {
-        binding.playbackCover.bind(song, R.drawable.ic_audiotrack)
-        binding.playbackSong.text = song.title
-        binding.playbackAlbum.text = song.album
-        binding.playbackArtist.text = song.artist
-        binding.playbackCount.text = String.format(
+        playbackCount.text = String.format(
             Locale.getDefault(), "%d / %d",
-            MusicService.findIndex(song).plus(1),
-            MusicService.mSongs.size
+            indexPosition.plus(1), AudioPlayerRemote.playingQueue.size
         )
-        binding.playbackSeekBar.durationMills = song.duration
+        playbackSeekBar.durationMills = song.duration
     }
     private val mBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
@@ -107,84 +73,144 @@ class PlayerActivity : BaseActivity() {
     private fun initializeSlider() {
         binding.playbackSeekBar.setOnCallback(object : MusicSeekBar.Callback {
             override fun onSeekTo(position: Int) {
-                isGlobalPlayAnim = !MusicService.isPlaying()
                 AudioPlayerRemote.seekTo(position)
+                if (!AudioPlayerRemote.isPlaying) AudioPlayerRemote.resumePlaying()
             }
         })
-        binding.playbackSeekBar.setOnSkipBackward { AudioPlayerRemote.skip(false) }
-        binding.playbackSeekBar.setOnSkipForward { AudioPlayerRemote.skip(true) }
+        binding.playbackSeekBar.setOnSkipBackward { handleSkip(false) }
+        binding.playbackSeekBar.setOnSkipForward { handleSkip(true) }
+    }
+    private fun handleSkip(isForward: Boolean) {
+        var duration = AudioPlayerRemote.songProgressMillis
+        duration = if (isForward) {
+            min(duration.plus(10000), AudioPlayerRemote.songDurationMillis)
+        } else {
+            max(duration.minus(10000), 0)
+        }
+        if (duration >= 0) {
+            AudioPlayerRemote.seekTo(duration)
+            if (!AudioPlayerRemote.isPlaying) AudioPlayerRemote.resumePlaying()
+        }
     }
     private fun initializeButtons() {
-        binding.playbackShuffle.setOnClickListener { toggleShuffle() }
+        binding.playbackShuffle.setOnClickListener {
+            if (AudioPlayerRemote.toggleShuffleMode()) {
+                toast(if (AudioPlayerRemote.isShuffleMode) {
+                    R.string.shuffle_enabled
+                } else R.string.shuffle_disabled)
+            }
+        }
         binding.playbackSkipPrev.setOnClickListener {
-            isGlobalPlayAnim = !MusicService.isPlaying()
             if (binding.playbackSeekBar.positionMills >= 5) {
                 binding.playbackSeekBar.positionMills = 0
             }
             AudioPlayerRemote.playPreviousSong()
         }
         binding.playbackPlayPause.setOnClickListener {
-            isGlobalPlayAnim = true
-            AudioPlayerRemote.playPauseSong()
+            if (AudioPlayerRemote.isPlaying) {
+                AudioPlayerRemote.pauseSong()
+            } else {
+                AudioPlayerRemote.resumePlaying()
+            }
         }
         binding.playbackSkipNext.setOnClickListener {
-            isGlobalPlayAnim = !MusicService.isPlaying()
             if (binding.playbackSeekBar.positionMills >= 5) {
                 binding.playbackSeekBar.positionMills = 0
             }
             AudioPlayerRemote.playNextSong()
         }
-        binding.playbackRepeat.setOnClickListener { togglePlaybackRepeat() }
-        initializeBtnShuffle()
-        initializeBtnRepeat()
-    }
-    private fun toggleShuffle() {
-        val isShuffleEnabled = !baseSettings.isShuffleEnabled
-        baseSettings.isShuffleEnabled = isShuffleEnabled
-        toast(if (isShuffleEnabled) R.string.shuffle_enabled else R.string.shuffle_disabled)
-        initializeBtnShuffle()
-        sendIntent(Constant.REFRESH_LIST)
-    }
-    private fun initializeBtnShuffle() {
-        val isShuffle = baseSettings.isShuffleEnabled
-        binding.playbackShuffle.apply {
-            alpha = if (isShuffle) 1f else 0.9f
-            updateIconTint(if (isShuffle) getPrimaryColor() else getColorCompat(R.color.widgets_color))
-            contentDescription = getString(if (isShuffle) R.string.shuffle_enabled else R.string.shuffle_disabled)
+        binding.playbackRepeat.setOnClickListener {
+            if (AudioPlayerRemote.cycleRepeatMode()) {
+                toast(AudioPlayerRemote.repeatMode.descriptionRes)
+            }
         }
     }
-    private fun getPrimaryColor(): Int {
-        return getAttrColorCompat(com.google.android.material.R.attr.colorPrimary)
+    override fun onResume() {
+        super.onResume()
+        musicProgressViewUpdate.start()
     }
-    private fun togglePlaybackRepeat() {
-        val newPlaybackRepeat = baseSettings.playbackRepeat.nextPlayBackRepeat
-        baseSettings.playbackRepeat = newPlaybackRepeat
-        toast(newPlaybackRepeat.descriptionRes)
-        initializeBtnRepeat()
+    private fun updateShuffleState() {
+        val isShuffleMode = AudioPlayerRemote.isShuffleMode
+        val content = getString(if (isShuffleMode) R.string.shuffle_enabled else R.string.shuffle_disabled)
+        binding.playbackShuffle.apply {
+            contentDescription = content
+            alpha = if (isShuffleMode) 1f else 0.9f
+            updateImageTint(this, isShuffleMode)
+        }
     }
-    private fun initializeBtnRepeat() {
-        val playbackRepeat = baseSettings.playbackRepeat
+    private fun updateRepeatState() {
+        val playbackRepeat = AudioPlayerRemote.repeatMode
         binding.playbackRepeat.apply {
             contentDescription = getString(playbackRepeat.nextPlayBackRepeat.descriptionRes)
             setImageResource(playbackRepeat.iconRes)
-            val isRepeatOff = playbackRepeat == PlaybackRepeat.REPEAT_OFF
-            alpha = if (isRepeatOff) 0.9f else 1f
-            updateIconTint(if (isRepeatOff) getColorCompat(R.color.widgets_color) else getPrimaryColor())
+            val isRepeatEnabled = playbackRepeat != PlaybackRepeat.REPEAT_OFF
+            alpha = if (isRepeatEnabled) 1f else 0.9f
+            updateImageTint(this, isRepeatEnabled)
         }
     }
-    private fun setPlayPause(playing: Boolean) {
-        binding.playbackPlayPause.updatePlayingState(playing, isGlobalPlayAnim)
-        isGlobalPlayAnim = false
+    private fun updateImageTint(imageView: ImageView, isTint: Boolean) {
+        val colorTinted = if (isTint) {
+            getAttrColorCompat(com.google.android.material.R.attr.colorPrimary)
+        } else {
+            getColorCompat(R.color.widgets_color)
+        }
+        ImageViewCompat.setImageTintList(imageView, ColorStateList.valueOf(colorTinted))
+    }
+    override fun onUpdateProgressViews(progress: Int, total: Int) {
+        binding.playbackSeekBar.durationMills = total.toLong()
+        binding.playbackSeekBar.positionMills = progress.toLong()
+    }
+    override fun onStop() {
+        super.onStop()
+        binding.playbackPlayPause.tag = null
+    }
+    private fun updatePlayPauseDrawableState() {
+        if (AudioPlayerRemote.isPlaying) {
+            binding.playbackPlayPause.setAnimatedVectorDrawable(R.drawable.anim_play_to_pause, true)
+        } else {
+            binding.playbackPlayPause.setAnimatedVectorDrawable(R.drawable.anim_pause_to_play, true)
+        }
     }
     private fun isFadeAnim(): Boolean {
         return intent?.getBooleanExtra("fade_anim", false) ?: false
     }
     override fun onPause() {
         super.onPause()
+        musicProgressViewUpdate.stop()
         if (isFadeAnim()) {
             overridePendingTransitionCompat(
                 true, android.R.anim.fade_in, android.R.anim.fade_out
             )
+        }
+    }
+    override fun onDestroy() {
+        removeMusicServiceEventListener(musicServiceCallback)
+        super.onDestroy()
+    }
+    private val musicServiceCallback = object : IMusicServiceEventListener {
+        override fun onServiceConnected() {
+            updatePlayPauseDrawableState()
+            updateRepeatState()
+            updateShuffleState()
+            updateSongInfo()
+        }
+        override fun onServiceDisconnected() {
+        }
+        override fun onQueueChanged() {
+        }
+        override fun onPlayingMetaChanged() {
+            updateSongInfo()
+        }
+        override fun onPlayStateChanged() {
+            updatePlayPauseDrawableState()
+        }
+        override fun onRepeatModeChanged() {
+            updateRepeatState()
+        }
+        override fun onShuffleModeChanged() {
+            updateShuffleState()
+        }
+        override fun onMediaStoreChanged() {
         }
     }
 }

@@ -19,7 +19,7 @@ class SubViewModel(application: Application) : AndroidViewModel(application) {
     private val context: Application get() = getApplication()
     private val liveData = MutableLiveData<List<Song>>()
     private var currentSong = Song.emptySong
-    private var durations = 0
+    private var durations = 0L
 
     fun getListData(): LiveData<List<Song>> = liveData
     fun getCurrentSong() = currentSong
@@ -31,7 +31,7 @@ class SubViewModel(application: Application) : AndroidViewModel(application) {
                 Constant.ALBUM_TAB -> Libraries.fetchSongsByAlbumId(context, modePair.second)
                 Constant.ARTIST_TAB  -> Libraries.fetchSongsByArtistId(context, modePair.second)
                 Constant.GENRE_TAB -> Libraries.fetchSongsByGenreId(context, modePair.second)
-                else -> Libraries.fetchSongsByOtg(context)
+                else -> Libraries.fetchSongsByOtg()
             }
         )
         currentSong = songs.getOrElse(0) { Song.emptySong }
@@ -47,7 +47,7 @@ class SubViewModel(application: Application) : AndroidViewModel(application) {
                 title = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE) ?: MediaStore.UNKNOWN_STRING,
                 album = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM) ?: MediaStore.UNKNOWN_STRING,
                 year = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_YEAR)?.toIntOrNull() ?: 0,
-                duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toIntOrNull() ?: 0
+                duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0
             )
             mmr.release()
         } catch (ignored: Exception) {

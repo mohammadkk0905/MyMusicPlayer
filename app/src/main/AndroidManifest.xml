@@ -3,23 +3,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.mohammadkk.mymusicplayer"
     android:installLocation="auto">
-    
+
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission
-        android:name="android.permission.WRITE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
-    
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <application
         android:name=".BaseApp"
         android:allowBackup="true"
@@ -49,8 +45,11 @@
             android:theme="@style/Theme.MyAudioPlayer.Stater">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                
+                <action android:name="android.intent.action.MUSIC_PLAYER" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.APP_MUSIC" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         
@@ -71,32 +70,13 @@
             android:roundIcon="@mipmap/ic_launcher_round" />
         
         <receiver
-            android:name=".services.MediaBtnReceiver"
+            android:name=".services.MediaButtonIntentReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter android:priority="999">
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
                 
                 <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
-        <receiver
-            android:name=".services.HeadsetPlugReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.HEADSET_PLUG" />
-            </intent-filter>
-        </receiver>
-        <receiver
-            android:name=".services.NotificationReceiver"
-            android:enabled="true"
-            android:exported="false" />
-        <receiver
-            android:name=".services.NotificationDismissedReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.mohammadkk.mymusicplayer.action.NOTIFICATION_DISMISSED" />
             </intent-filter>
         </receiver>
         

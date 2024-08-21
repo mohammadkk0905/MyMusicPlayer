@@ -95,6 +95,7 @@ class DeleteSongsDialog : DialogFragment() {
             return dataset
         }
         fun destroyDataset() {
+
             dataset.clear()
         }
     }

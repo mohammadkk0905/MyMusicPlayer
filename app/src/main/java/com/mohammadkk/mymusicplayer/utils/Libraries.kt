@@ -3,9 +3,11 @@ package com.mohammadkk.mymusicplayer.utils
 import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
+import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.provider.MediaStore.Audio
 import android.provider.MediaStore.Audio.Genres
+import androidx.core.database.getStringOrNull
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.models.Album
@@ -18,18 +20,22 @@ import kotlin.math.abs
 
 object Libraries {
     private const val IS_MUSIC = "${Audio.AudioColumns.IS_MUSIC} = 1 AND ${Audio.AudioColumns.DURATION} >= 5000"
-    private val BASE_PROJECTION = arrayOf(
-        Audio.AudioColumns._ID,// 0
-        Audio.AudioColumns.ALBUM_ID,// 1
-        Audio.AudioColumns.ARTIST_ID,// 2
-        Audio.AudioColumns.TITLE,// 3
-        Audio.AudioColumns.ALBUM,// 4
-        Audio.AudioColumns.ARTIST,// 5
-        Audio.AudioColumns.DATA,// 6
-        Audio.AudioColumns.YEAR,// 7
-        Audio.AudioColumns.DURATION,// 8
-        Audio.AudioColumns.TRACK,// 9
-        Audio.AudioColumns.DATE_MODIFIED// 10
+
+    @JvmStatic
+    val BASE_PROJECTION = arrayOf(
+        BaseColumns._ID, // 0
+        Audio.AudioColumns.TITLE, // 1
+        Audio.AudioColumns.TRACK, // 2
+        Audio.AudioColumns.YEAR, // 3
+        Audio.AudioColumns.DURATION, // 4
+        Audio.AudioColumns.DATA, // 5
+        Audio.AudioColumns.DATE_MODIFIED, // 6
+        Audio.AudioColumns.ALBUM_ID, // 7
+        Audio.AudioColumns.ALBUM, // 8
+        Audio.AudioColumns.ARTIST_ID, // 9
+        Audio.AudioColumns.ARTIST, // 10
+        Audio.AudioColumns.COMPOSER, // 11
+        "album_artist" // 12
     )
 
     fun fetchAllSongs(context: Context, selection: String?, selectionArgs: Array<String>?): List<Song> {
@@ -92,16 +98,18 @@ object Libraries {
     private fun getSongFromCursorImpl(cursor: Cursor): Song {
         return Song(
             id = cursor.getLong(0),
-            albumId = cursor.getLong(1),
-            artistId = cursor.getLong(2),
-            title = cursor.getString(3) ?: MediaStore.UNKNOWN_STRING,
-            album = cursor.getString(4) ?: MediaStore.UNKNOWN_STRING,
-            artist = cursor.getString(5) ?: MediaStore.UNKNOWN_STRING,
-            path = cursor.getString(6) ?: "",
-            year = cursor.getInt(7),
-            duration = cursor.getInt(8),
-            trackNumber = cursor.getInt(9),
-            dateModified = cursor.getLong(10)
+            title = cursor.getString(1) ?: MediaStore.UNKNOWN_STRING,
+            track = cursor.getInt(2),
+            year = cursor.getInt(3),
+            duration = cursor.getLong(4),
+            data = cursor.getString(5) ?: "",
+            dateModified = cursor.getLong(6),
+            albumId = cursor.getLong(7),
+            album = cursor.getString(8) ?: MediaStore.UNKNOWN_STRING,
+            artistId = cursor.getLong(9),
+            artist = cursor.getString(10) ?: MediaStore.UNKNOWN_STRING,
+            composer = cursor.getStringOrNull(11) ?: "",
+            albumArtist = cursor.getStringOrNull(12) ?: ""
         )
     }
     fun splitsIntoAlbums(items: List<Song>): List<Album> {
@@ -186,23 +194,22 @@ object Libraries {
     fun fetchSongsByGenreId(context: Context, id: Long): List<Song> {
         return fetchAllSongs(makeGenreSongCursor(context.contentResolver, id))
     }
-    fun fetchSongsByOtg(context: Context): List<Song> {
+    fun fetchSongsByOtg(): List<Song> {
         val otgPath = BaseSettings.getInstance().otgPartition
         if (otgPath.isEmpty()) return emptyList()
         val files = FileUtils.listFilesDeep(File(otgPath), FileUtils.AUDIO_FILE_FILTER)
         return files.mapIndexed { index, file ->
             Song(
                 id = index.toLong(),
-                albumId = 0L,
-                artistId = 0L,
                 title = file.nameWithoutExtension,
+                track = 0, year = 0, duration = 0,
+                data = file.path,
+                dateModified = file.lastModified(),
+                albumId = 0L,
                 album = "Unknown Album",
+                artistId = 0L,
                 artist = "Unknown Artist",
-                path = file.path,
-                year = 0,
-                duration = 0,
-                trackNumber = 0,
-                dateModified = file.lastModified()
+                composer = "", albumArtist = ""
             )
         }
     }

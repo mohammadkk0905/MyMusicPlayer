@@ -19,12 +19,15 @@ class MusicSeekBar @JvmOverloads constructor(
     init {
         binding.musicSlider.addOnSliderTouchListener(this)
         binding.musicSlider.addOnChangeListener(this)
+        if (binding.sliderPosition.text.isNullOrEmpty()) {
+            binding.sliderPosition.text = (0L).toFormattedDuration(true)
+        }
     }
 
     private var mCallback: Callback? = null
 
-    var positionMills: Int
-        get() = binding.musicSlider.value.toInt()
+    var positionMills: Long
+        get() = binding.musicSlider.value.toLong()
         set(value) {
             if (value <= durationMills && !isActivated) {
                 binding.musicSlider.value = value.toFloat()
@@ -32,8 +35,8 @@ class MusicSeekBar @JvmOverloads constructor(
             }
         }
 
-    var durationMills: Int
-        get() = binding.musicSlider.valueTo.toInt()
+    var durationMills: Long
+        get() = binding.musicSlider.valueTo.toLong()
         set(value) {
             val valueTo = max(value, 1)
             isEnabled = value > 0
@@ -62,7 +65,7 @@ class MusicSeekBar @JvmOverloads constructor(
     }
     override fun onValueChange(slider: Slider, value: Float, fromUser: Boolean) {
         if (fromUser) {
-            binding.sliderPosition.text = value.toInt().toFormattedDuration(true)
+            binding.sliderPosition.text = value.toLong().toFormattedDuration(true)
         }
     }
     override fun onFinishInflate() {

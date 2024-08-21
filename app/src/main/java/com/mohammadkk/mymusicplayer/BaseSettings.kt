@@ -62,6 +62,14 @@ class BaseSettings(val app: Application) {
         get() = prefs.getBoolean("gapless_playback", false)
         set(value) = prefs.edit { putBoolean("gapless_playback", value) }
 
+    var playbackSpeed: Float
+        get() = prefs.getFloat("playback_speed", 1F)
+        set(value) = prefs.edit { putFloat("playback_speed", value) }
+
+    var playbackPitch: Float
+        get() = prefs.getFloat("playback_pitch", 1F)
+        set(value) = prefs.edit { putFloat("playback_pitch", value) }
+
     var autoplay: Boolean
         get() = prefs.getBoolean("autoplay", true)
         set(value) = prefs.edit { putBoolean("autoplay", value) }
@@ -88,10 +96,6 @@ class BaseSettings(val app: Application) {
     var coverMode: Int
         get() = prefs.getInt("cover_mode", Constant.COVER_MEDIA_STORE)
         set(value) = prefs.edit { putInt("cover_mode", value) }
-
-    var lastStateMode: Pair<String, Long>?
-        get() = Constant.jsonToPairState(prefs.getString("last_state_mode", null))
-        set(value) = prefs.edit { putString("last_state_mode", Constant.pairStateToJson(value)) }
 
     companion object {
         @Volatile

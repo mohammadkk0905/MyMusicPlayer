@@ -2,7 +2,7 @@ package com.mohammadkk.mymusicplayer.models
 
 data class Artist(
     val id: Long,
-    var duration: Int,
+    var duration: Long,
     var albumCount: Int,
     val songs: MutableList<Song>
 ) {

@@ -2,6 +2,7 @@ package com.mohammadkk.mymusicplayer.fragments
 
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -14,7 +15,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
@@ -30,7 +30,8 @@ import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
 import com.mohammadkk.mymusicplayer.models.Album
-import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollRecyclerView
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScroller
+import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollerBuilder
 import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.abs
@@ -38,7 +39,6 @@ import kotlin.math.abs
 class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
     private lateinit var binding: FragmentLibrariesBinding
     private val musicViewModel: MusicViewModel by activityViewModels()
-    private val settings = BaseSettings.getInstance()
     private var albumsAdapter: AlbumsAdapter? = null
     private var unchangedList = listOf<Album>()
 
@@ -50,11 +50,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = albumsAdapter
-            popupProvider = object : FastScrollRecyclerView.PopupProvider {
-                override fun getPopup(pos: Int): String {
-                    return getPopupText(pos)
-                }
-            }
+            FastScrollerBuilder(binding.listRv).setPadding(Rect()).build()
         }
         collectImmediately(musicViewModel.albumsList, ::updateList)
         collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
@@ -69,17 +65,6 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
         return resources.getInteger(
             if (requireContext().isLandscape) R.integer.def_grid_columns_land else R.integer.def_grid_columns
         )
-    }
-    private fun getPopupText(position: Int): String {
-        val album = unchangedList.getOrNull(position)
-        val result = when (abs(settings.albumsSorting)) {
-            Constant.SORT_BY_TITLE -> album?.title
-            Constant.SORT_BY_ARTIST -> album?.artist
-            Constant.SORT_BY_YEAR -> return album?.year?.toLocaleYear() ?: "-"
-            Constant.SORT_BY_DURATION -> return album?.duration?.toFormattedDuration(true) ?: "-"
-            else -> album?.title
-        }
-        return Libraries.getSectionName(result, true)
     }
     private fun updateList(albums: List<Album>) {
         unchangedList = albums
@@ -123,7 +108,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
     private class AlbumsAdapter(
         context: FragmentActivity,
         var dataSet: MutableList<Album>
-    ) : AbsMultiAdapter<AlbumsAdapter.ViewHolder, Album>(context) {
+    ) : AbsMultiAdapter<AlbumsAdapter.ViewHolder, Album>(context), FastScroller.PopupTextProvider {
         private val selectedColor = context.getColorCompat(R.color.blue_primary_container)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -152,6 +137,17 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             holder.bindItems(dataSet[holder.absoluteAdapterPosition])
         }
+        override fun getPopupText(view: View, position: Int): CharSequence {
+            val album = dataSet.getOrNull(position)
+            val result = when (abs(baseSettings.albumsSorting)) {
+                Constant.SORT_BY_TITLE -> album?.title
+                Constant.SORT_BY_ARTIST -> album?.artist
+                Constant.SORT_BY_YEAR -> return album?.year?.toLocaleYear() ?: "-"
+                Constant.SORT_BY_DURATION -> return album?.duration?.toFormattedDuration(true) ?: "-"
+                else -> album?.title
+            }
+            return Libraries.getSectionName(result, true)
+        }
         fun swapDataSet(dataSet: List<Album>) {
             this.dataSet = ArrayList(dataSet)
             notifyDataSetChanged()
@@ -167,33 +163,31 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
             }
         }
         inner class ViewHolder(private val binding: ItemGridBinding) : RecyclerView.ViewHolder(binding.root) {
-            fun bindItems(album: Album) {
-                with(binding) {
-                    if (checked.contains(album)) {
-                        checkbox.visibility = View.VISIBLE
-                        root.setCardBackgroundColor(selectedColor)
+            fun bindItems(album: Album) = with(binding) {
+                if (checked.contains(album)) {
+                    checkbox.visibility = View.VISIBLE
+                    root.setCardBackgroundColor(selectedColor)
+                } else {
+                    checkbox.visibility = View.INVISIBLE
+                    root.setCardBackgroundColor(Color.TRANSPARENT)
+                }
+                title.text = album.title
+                text.text = context.resources.getQuantityString(
+                    R.plurals.songs_plural, album.trackCount, album.trackCount
+                )
+                image.bind(album.getSafeSong(), R.drawable.ic_album)
+                root.setOnClickListener {
+                    if (isInQuickSelectMode) {
+                        toggleChecked(absoluteAdapterPosition)
                     } else {
-                        checkbox.visibility = View.INVISIBLE
-                        root.setCardBackgroundColor(Color.TRANSPARENT)
-                    }
-                    title.text = album.title
-                    text.text = context.resources.getQuantityString(
-                        R.plurals.songs_plural, album.trackCount, album.trackCount
-                    )
-                    image.bind(album.getSafeSong(), R.drawable.ic_album)
-                    root.setOnClickListener {
-                        if (isInQuickSelectMode) {
-                            toggleChecked(absoluteAdapterPosition)
-                        } else {
-                            if (!Constant.isBlockingClick()) {
-                                startTracks(album)
-                            }
+                        if (!Constant.isBlockingClick()) {
+                            startTracks(album)
                         }
                     }
-                    root.setOnLongClickListener {
-                        toggleChecked(absoluteAdapterPosition)
-                        true
-                    }
+                }
+                root.setOnLongClickListener {
+                    toggleChecked(absoluteAdapterPosition)
+                    true
                 }
             }
         }

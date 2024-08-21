@@ -67,4 +67,7 @@ abstract class AbsMultiAdapter<V : RecyclerView.ViewHolder, I>(
             actionMode?.title = "$size/$itemCount"
         }
     }
+    protected fun safeNotifyItemChanged(position: Int) {
+        if (position != -1) notifyItemChanged(position)
+    }
 }

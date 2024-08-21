@@ -4,38 +4,49 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
+import android.text.TextUtils
 import android.view.GestureDetector
+import android.view.GestureDetector.OnGestureListener
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import androidx.core.app.ActivityOptionsCompat
-import androidx.core.graphics.ColorUtils
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.core.os.BundleCompat
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
+import com.mohammadkk.mymusicplayer.extensions.accentColor
 import com.mohammadkk.mymusicplayer.extensions.bind
-import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
-import com.mohammadkk.mymusicplayer.extensions.updatePlayingState
+import com.mohammadkk.mymusicplayer.extensions.setAnimatedVectorDrawable
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
-import com.mohammadkk.mymusicplayer.services.MusicService
-import com.mohammadkk.mymusicplayer.services.MusicService.Companion.isGlobalPlayAnim
-import com.mohammadkk.mymusicplayer.viewmodels.PlaybackViewModel
+import com.mohammadkk.mymusicplayer.services.MusicProgressViewUpdate
+import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.max
 
-class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
-    private lateinit var binding: FragmentNowPlayingBinding
-    private val playbackViewModel: PlaybackViewModel by activityViewModels()
+class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicProgressViewUpdate.Callback {
+    private var _binding: FragmentNowPlayingBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var progressViewUpdate: MusicProgressViewUpdate
+    private var cacheSong: Song? = null
     private var isStopHandleClick = false
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        progressViewUpdate = MusicProgressViewUpdate(this)
+    }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding = FragmentNowPlayingBinding.bind(view)
+        _binding = FragmentNowPlayingBinding.bind(view)
         view.setOnTouchListener(FlingPlayBackController())
-        initializeViewModel()
+        if (savedInstanceState != null) {
+            cacheSong = BundleCompat.getParcelable(savedInstanceState, "cache_song", Song::class.java)
+            binding.songProgress.max = max(savedInstanceState.getInt("progress_max"), 0)
+            binding.songProgress.progress = max(savedInstanceState.getInt("progress_song"), 0)
+        }
+        binding.songProgress.accentColor()
         binding.root.setOnClickListener {
             if (!isStopHandleClick) {
                 with(requireActivity()) {
@@ -49,90 +60,108 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
             }
         }
         binding.btnPlayPause.setOnClickListener {
-            isGlobalPlayAnim = true
-            AudioPlayerRemote.playPauseSong()
+            if (AudioPlayerRemote.isPlaying) {
+                AudioPlayerRemote.pauseSong()
+            } else {
+                AudioPlayerRemote.resumePlaying()
+            }
         }
     }
     override fun onStop() {
         super.onStop()
-        isGlobalPlayAnim = false
+        binding.btnPlayPause.tag = null
     }
-    private fun initializeViewModel() {
-        val primaryDark = requireContext().getAttrColorCompat(com.google.android.material.R.attr.colorPrimaryVariant)
-        binding.songProgress.trackColor = ColorUtils.setAlphaComponent(primaryDark, 80)
-        playbackViewModel.song.observe(requireActivity()) {
-            onSongChanged(it)
-        }
-        playbackViewModel.isPlaying.observe(requireActivity()) {
-            setPlayPause(it)
-        }
-        playbackViewModel.isPermission.observe(requireActivity()) {
-            if (!it) onNoStoragePermission()
-        }
-        playbackViewModel.position.observe(requireActivity()) {
-            onProgressUpdated(it)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        _binding?.run {
+            outState.putParcelable("cache_song", AudioPlayerRemote.currentSong)
+            outState.putInt("progress_max", songProgress.max)
+            outState.putInt("progress_song", songProgress.progress)
         }
     }
-    private fun initSongInfo(song: Song) {
-        binding.trackImage.bind(song, R.drawable.ic_audiotrack)
-        binding.tvTrackTitle.text = song.title
-        binding.tvTrackSubtitle.text = getString(R.string.album_artist_symbol, song.album, song.artist)
-        binding.songProgress.max = song.duration / 1000
-    }
-    override fun onViewStateRestored(savedInstanceState: Bundle?) {
-        super.onViewStateRestored(savedInstanceState)
-        if (MusicService.isMusicPlayer()) {
-            isGlobalPlayAnim = false
-            AudioPlayerRemote.broadcastStatusRestore()
-        }
-    }
-    private fun onNoStoragePermission() {
-        Log.d(javaClass.simpleName, "Not permission storage")
-    }
-    private fun onProgressUpdated(progress: Int) {
-        binding.songProgress.progress = progress / 1000
-    }
-    private fun onSongChanged(song: Song?) {
-        if (song == null) {
-            val cover = GlideExtensions.getCoverArt(requireContext(), -1L, R.drawable.ic_audiotrack)
-            binding.trackImage.setImageDrawable(cover)
-            binding.tvTrackTitle.text = MediaStore.UNKNOWN_STRING
-            binding.tvTrackSubtitle.text = MediaStore.UNKNOWN_STRING
+    private fun updateSongInfo() = _binding?.run {
+        val song = cacheSong ?: AudioPlayerRemote.currentSong
+        if (song.id == -1L && song.duration < 0) {
+            val cover = GlideExtensions.getCoverArt(requireContext(), song.id, R.drawable.ic_audiotrack)
+            trackImage.setImageDrawable(cover)
+            tvTrackTitle.text = MediaStore.UNKNOWN_STRING
+            tvTrackSubtitle.text = MediaStore.UNKNOWN_STRING
+            serviceActivity?.onShowOpenMiniPlayer(false)
         } else {
-            initSongInfo(song)
+            trackImage.bind(song, R.drawable.ic_audiotrack)
+            tvTrackTitle.text = song.title
+            tvTrackSubtitle.text = getString(R.string.album_artist_symbol, song.album, song.artist)
+            songProgress.max = (song.duration / 1000).toInt()
+            serviceActivity?.onShowOpenMiniPlayer(true)
         }
     }
-    private fun setPlayPause(playing: Boolean) {
-        binding.btnPlayPause.updatePlayingState(playing, isGlobalPlayAnim)
-        isGlobalPlayAnim = false
+    override fun onResume() {
+        super.onResume()
+        progressViewUpdate.start()
+    }
+    override fun onPause() {
+        super.onPause()
+        progressViewUpdate.stop()
+    }
+    override fun onUpdateProgressViews(progress: Int, total: Int) {
+        _binding?.run {
+            songProgress.max = total / 1000
+            songProgress.progress = progress / 1000
+        }
+    }
+    private fun updatePlayPauseDrawableState() {
+        if (AudioPlayerRemote.isPlaying) {
+            binding.btnPlayPause.setAnimatedVectorDrawable(R.drawable.anim_play_to_pause, true)
+        } else {
+            binding.btnPlayPause.setAnimatedVectorDrawable(R.drawable.anim_pause_to_play, true)
+        }
+    }
+    override fun onServiceConnected() {
+        updateSongInfo()
+        updatePlayPauseDrawableState()
+    }
+    override fun onPlayingMetaChanged() {
+        updateSongInfo()
+    }
+    override fun onPlayStateChanged() {
+        updatePlayPauseDrawableState()
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
     private inner class FlingPlayBackController : View.OnTouchListener {
-        private val gestureDetector = GestureDetector(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+        private val viewConfig = ViewConfiguration.get(requireContext())
+        private val gestureDetector = GestureDetector(requireContext(), object : OnGestureListener {
+            override fun onDown(e: MotionEvent): Boolean = true
+
+            override fun onShowPress(e: MotionEvent) = Unit
+
+            override fun onSingleTapUp(e: MotionEvent): Boolean  = false
+
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean = false
+
+            override fun onLongPress(e: MotionEvent) = Unit
+
             override fun onFling(
                 e1: MotionEvent?,
                 e2: MotionEvent,
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                try {
-                    val diffY = e2.y - e1!!.y
-                    val diffX = e2.x - e1.x
-                    if (abs(diffX) > abs(diffY)) {
-                        if (abs(diffX) > 100 && abs(velocityX) > 100) {
-                            if (diffX > 0) {
-                                isGlobalPlayAnim = !MusicService.isPlaying()
-                                AudioPlayerRemote.playNextSong()
-                                return true
-                            }
-                            else {
-                                isGlobalPlayAnim = !MusicService.isPlaying()
-                                AudioPlayerRemote.playPreviousSong()
-                                return true
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                e1 ?: return false
+                val diffY = e2.y - e1.y
+                val diffX = e2.x - e1.x
+                if (abs(diffX) > abs(diffY) &&
+                    abs(diffX) > viewConfig.scaledTouchSlop &&
+                    abs(velocityX) > viewConfig.scaledMinimumFlingVelocity) {
+                    if (diffX > 0) onSwipeRight() else onSwipeLeft()
+                    return true
                 }
                 return false
             }
@@ -143,6 +172,22 @@ class NowPlayingFragment : Fragment(R.layout.fragment_now_playing) {
                 isStopHandleClick = gestureDetector.onTouchEvent(event)
             }
             return false
+        }
+        private fun onSwipeRight() {
+            if (isRtl())
+                AudioPlayerRemote.playNextSong()
+            else
+                AudioPlayerRemote.playPreviousSong()
+        }
+        private fun onSwipeLeft() {
+            if (isRtl())
+                AudioPlayerRemote.playPreviousSong()
+            else
+                AudioPlayerRemote.playNextSong()
+        }
+        private fun isRtl(): Boolean {
+            val direction = TextUtils.getLayoutDirectionFromLocale(Locale.getDefault())
+            return direction == View.LAYOUT_DIRECTION_RTL
         }
     }
 }

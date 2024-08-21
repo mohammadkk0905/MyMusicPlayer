@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.parcelize)
     alias(libs.plugins.ksp)
 }
 
@@ -55,9 +56,6 @@ dependencies {
     implementation libs.androidx.swiperefreshlayout
     implementation libs.androidx.recyclerview
     implementation libs.androidx.media
-    implementation libs.room.runtime
-    implementation libs.room.ktx
-    ksp libs.androidx.room.compiler
     implementation libs.glide
     ksp libs.glide.ksp
     implementation libs.jaudiotagger

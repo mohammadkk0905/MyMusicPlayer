@@ -16,6 +16,8 @@
     <string name="artists">Artists</string>
     <string name="genres">Genres</string>
     <string name="empty">Empty</string>
+    <string name="audio_focus_denied">Audio focus denied.</string>
+    <string name="unplayable_file">Couldn\'t play this song.</string>
     <string name="no_results_found">No results found</string>
     <string name="no_songs">You have no songs</string>
     <string name="no_albums">You have no albums</string>
@@ -53,6 +55,9 @@
     <string name="repeat_all">Repeat all turned on</string>
     <string name="repeat_song">Repeat the current song</string>
     <string name="stop_playback_after_curr_song">Stop playback after the current song</string>
+    <string name="playing_notification_name">Playing notification</string>
+    <string name="playing_notification_description">The playing notification has options for play/pause etc.</string>
+    <string name="now_playing_queue">Now playing queue</string>
     <string name="playing">Playing</string>
     <string name="play_all">Play all</string>
     <string name="previous">Previous</string>

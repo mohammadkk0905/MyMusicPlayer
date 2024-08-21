@@ -22,18 +22,6 @@ class PlaybackStateManager private constructor() {
     fun onReloadLibraries() {
         reloads.forEach { it.onRefresh() }
     }
-    fun noStoragePermission() {
-        callbacks.forEach { it.onNoStoragePermission() }
-    }
-    fun progressUpdated(progress: Int) {
-        callbacks.forEach { it.onProgressUpdated(progress) }
-    }
-    fun songChanged(song: Song?) {
-        callbacks.forEach { it.onSongChanged(song) }
-    }
-    fun songStateChanged(isPlaying: Boolean) {
-        callbacks.forEach { it.onSongStateChanged(isPlaying) }
-    }
     interface Callback {
         fun onNoStoragePermission()
         fun onProgressUpdated(progress: Int)

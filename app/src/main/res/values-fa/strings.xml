@@ -16,6 +16,8 @@
     <string name="artists">هنرمندان</string>
     <string name="genres">سبک‌ها</string>
     <string name="empty">خالی</string>
+    <string name="audio_focus_denied">تمرکز صدا قطع شد.</string>
+    <string name="unplayable_file">این موزیک پخش نمی‌شود.</string>
     <string name="no_results_found">نتیجه ای یافت نشد</string>
     <string name="no_songs">شما هیچ آهنگی ندارید</string>
     <string name="no_albums">شما آلبومی ندارید</string>
@@ -53,6 +55,9 @@
     <string name="repeat_all">تکرار همه روشن شد</string>
     <string name="repeat_song">تکرار آهنگ فعلی</string>
     <string name="stop_playback_after_curr_song">توقف پخش پس از آهنگ فعلی</string>
+    <string name="playing_notification_name">اعلان موسیقی در حال پخش</string>
+    <string name="playing_notification_description">اعلان موسیقی در حال پخش امکاناتی برای پخش و قطع کردن و… دارد.</string>
+    <string name="now_playing_queue">لیست درحال پخش</string>
     <string name="playing">در حال پخش</string>
     <string name="play_all">پخش همه</string>
     <string name="previous">قبلی</string>

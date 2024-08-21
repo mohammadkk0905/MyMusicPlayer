@@ -31,33 +31,22 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.bumptech.glide.util.Util.isOnMainThread
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.database.QueueItemsDao
-import com.mohammadkk.mymusicplayer.database.SongsDatabase
-import com.mohammadkk.mymusicplayer.models.QueueItem
 import com.mohammadkk.mymusicplayer.models.Song
-import com.mohammadkk.mymusicplayer.services.MusicService
+import com.mohammadkk.mymusicplayer.providers.MusicPlaybackQueue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 val Context.notificationManager: NotificationManager get() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 val Context.isLandscape: Boolean get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-val Context.queueDAO: QueueItemsDao get() = SongsDatabase.getInstance(this).QueueItemsDao()
+val Context.musicPlaybackQueue: MusicPlaybackQueue get() = MusicPlaybackQueue.getInstance(this)
 
 fun Context.hasPermission(permission: String?): Boolean {
     if (permission == null) return false
     return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 }
 fun Context.sendIntent(actionName: String) {
-    val intent = Intent(this, MusicService::class.java).setAction(actionName)
-    try {
-        if (Constant.isOreoPlus()) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
-    } catch (ignored: Exception) {
-    }
+    packageName.plus(actionName)
 }
 fun Activity.hasNotificationApi(): Boolean {
     if (Constant.isTiramisuPlus()) {
@@ -175,17 +164,6 @@ fun Activity.shareSongIntent(song: Song) {
                 errorToast(e)
             }
         }
-    }
-}
-fun Context.resetQueueItems(newSongs: List<Song>, callback: () -> Unit) {
-    Constant.ensureBackgroundThread {
-        queueDAO.deleteAllItems()
-        val itemsToInsert = newSongs.mapIndexed { index, song ->
-            QueueItem(song.id, index, false, 0)
-        }
-        queueDAO.insertAll(itemsToInsert)
-        sendIntent(Constant.UPDATE_QUEUE_SIZE)
-        callback()
     }
 }
 fun Context.errorToast(exception: Exception, length: Int = Toast.LENGTH_LONG) {

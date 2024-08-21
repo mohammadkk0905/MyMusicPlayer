@@ -3,16 +3,18 @@ package com.mohammadkk.mymusicplayer
 import android.Manifest
 import android.os.Build
 import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.ColorInt
+import androidx.annotation.FloatRange
 import com.bumptech.glide.util.Util.isOnMainThread
+import com.mohammadkk.mymusicplayer.models.Song
 import org.json.JSONException
 import org.json.JSONObject
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 object Constant {
     private var lastClickTime: Long = 0
-    val MY_EXECUTOR: ExecutorService = Executors.newSingleThreadExecutor()
     const val PERMISSION_REQUEST_STORAGE = 1001
     const val PERMISSION_REQUEST_NOTIFICATION = 1005
     //cover mode load
@@ -33,25 +35,11 @@ object Constant {
     const val ALBUM_TAB = "ALBUM"
     const val ARTIST_TAB = "ARTIST"
     const val GENRE_TAB = "GENRE"
-
-    const val SONG_ID = "song_id"
-    const val RESTART_PLAYER = "restart_player"
+    const val THROTTLE: Long = 500
 
     // Notification
     private const val PATH = "com.mohammadkk.mymusicplayer.action."
     const val SCANNER = PATH + "SCANNER"
-    const val INIT = PATH + "INIT"
-    const val PREVIOUS = PATH + "PREVIOUS"
-    const val PAUSE = PATH + "PAUSE"
-    const val PLAY_PAUSE = PATH + "PLAY_PAUSE"
-    const val NEXT = PATH + "NEXT"
-    const val FINISH = PATH + "FINISH"
-    const val DISMISS = PATH + "DISMISS"
-    const val SKIP_BACKWARD = PATH + "SKIP_BACKWARD"
-    const val SKIP_FORWARD = PATH + "SKIP_FORWARD"
-    const val REFRESH_LIST = PATH + "REFRESH_LIST"
-    const val UPDATE_QUEUE_SIZE = PATH + "UPDATE_QUEUE_SIZE"
-    const val BROADCAST_STATUS = PATH + "BROADCAST_STATUS"
     const val NOTIFICATION_DISMISSED = PATH + "NOTIFICATION_DISMISSED"
 
     val STORAGE_PERMISSION get() = when {
@@ -74,6 +62,22 @@ object Constant {
             }.start()
         } else {
             callback()
+        }
+    }
+    @JvmStatic
+    fun withAlpha(@ColorInt baseColor: Int, @FloatRange(from = 0.0, to = 1.0) alpha: Float): Int {
+        val a = min(255, max(0, (alpha * 255).toInt())) shl 24
+        val rgb = 0x00ffffff and baseColor
+        return a + rgb
+    }
+    fun makeShuffleList(listToShuffle: MutableList<Song>, current: Int) {
+        if (listToShuffle.isEmpty()) return
+        if (current >= 0) {
+            val song = listToShuffle.removeAt(current)
+            listToShuffle.shuffle()
+            listToShuffle.add(0, song)
+        } else {
+            listToShuffle.shuffle()
         }
     }
     fun pairStateToJson(pair: Pair<String, Long>?): String? {
