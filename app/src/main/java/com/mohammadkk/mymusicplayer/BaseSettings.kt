@@ -54,6 +54,10 @@ class BaseSettings(val app: Application) {
         get() = prefs.getInt("genres_sorting", Constant.SORT_BY_TITLE)
         set(value) = prefs.edit { putInt("genres_sorting", value) }
 
+    var themeUI: Int
+        get() = prefs.getInt("theme_ui_mode", 2)
+        set(value) = prefs.edit { putInt("theme_ui_mode", value) }
+
     var swapPrevNext: Boolean
         get() = prefs.getBoolean("swap_prev_next", false)
         set(value) = prefs.edit { putBoolean("swap_prev_next", value) }

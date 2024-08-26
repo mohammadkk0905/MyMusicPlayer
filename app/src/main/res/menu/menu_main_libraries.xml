@@ -24,6 +24,9 @@
             android:title="@string/settings">
             <menu>
                 <item
+                    android:id="@+id/action_ui_mode"
+                    android:title="@string/theme_title"/>
+                <item
                     android:id="@+id/action_album_covers"
                     android:title="@string/set_cover_mode" />
             </menu>

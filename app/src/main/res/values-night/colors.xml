@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="blue_primary_container">#004D64</color>
+    <color name="light_blue_primary_container">#00497F</color>
+    <color name="light_blue_primary_selected">#123241</color>
+    <color name="light_blue_secondary">#BBC8DB</color>
+    <color name="light_blue_secondary_selected">#1A3B4C</color>
 
     <color name="cover_bg">#202020</color>
     <color name="secondary_bg">#2C2C2C</color>
@@ -8,5 +11,4 @@
     <color name="widgets_color">#FAFAFA</color>
     <color name="main_bg">#151515</color>
     <color name="toolbar_bg">#1C1C1C</color>
-    <color name="action_bg">@color/toolbar_bg</color>
 </resources>

@@ -3,15 +3,11 @@ package com.mohammadkk.mymusicplayer
 import android.Manifest
 import android.os.Build
 import androidx.annotation.ChecksSdkIntAtLeast
-import androidx.annotation.ColorInt
-import androidx.annotation.FloatRange
 import com.bumptech.glide.util.Util.isOnMainThread
 import com.mohammadkk.mymusicplayer.models.Song
 import org.json.JSONException
 import org.json.JSONObject
 import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 object Constant {
     private var lastClickTime: Long = 0
@@ -63,12 +59,6 @@ object Constant {
         } else {
             callback()
         }
-    }
-    @JvmStatic
-    fun withAlpha(@ColorInt baseColor: Int, @FloatRange(from = 0.0, to = 1.0) alpha: Float): Int {
-        val a = min(255, max(0, (alpha * 255).toInt())) shl 24
-        val rgb = 0x00ffffff and baseColor
-        return a + rgb
     }
     fun makeShuffleList(listToShuffle: MutableList<Song>, current: Int) {
         if (listToShuffle.isEmpty()) return

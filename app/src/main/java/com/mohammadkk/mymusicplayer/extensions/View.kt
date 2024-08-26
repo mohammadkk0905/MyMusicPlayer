@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
@@ -22,7 +23,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
@@ -44,11 +44,6 @@ fun ViewPager2.reduceDragSensitivity() {
         Log.e("MainActivity", e.stackTraceToString())
     }
 }
-fun CircularProgressIndicator.accentColor() {
-    val color = context.getAttrColorCompat(com.google.android.material.R.attr.colorPrimary)
-    setIndicatorColor(color)
-    trackColor = Constant.withAlpha(color, 0.2f)
-}
 fun ImageView.setAnimatedVectorDrawable(@DrawableRes resId: Int, animate: Boolean) {
     val drawableIcon = AppCompatResources.getDrawable(context, resId)
     val imageTag = tag as? Int
@@ -68,6 +63,15 @@ fun ImageView.bind(song: Song, @DrawableRes placeholder: Int) {
             .getCoverOptions(song, coverPlaceholder)
             .load(songModel)
             .into(this)
+    }
+}
+fun Int.getDefaultNightMode() = when (this) {
+    0 -> AppCompatDelegate.MODE_NIGHT_NO
+    1 -> AppCompatDelegate.MODE_NIGHT_YES
+    else -> if (Constant.isQPlus()) {
+        AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+    } else {
+        AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY
     }
 }
 fun Dialog?.applyFullHeightDialog(activity: Activity) {

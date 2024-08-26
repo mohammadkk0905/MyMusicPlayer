@@ -1,5 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.MyAudioPlayer" parent="@style/Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">0</item>
         <item name="popupMenuStyle">@style/Widget.Audio.PopupMenu</item>
         <item name="actionModeStyle">@style/Widget.Audio.ActionMode</item>
         <item name="actionModeCloseDrawable">@drawable/ic_west</item>
@@ -8,21 +10,15 @@
         <item name="bottomSheetDragHandleStyle">@style/Widget.Audio.BottomSheet.Handle</item>
         <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Demo.BottomSheetDialog</item>
         <item name="materialAlertDialogTheme">@style/Theme.Audio.MaterialAlertDialog</item>
-        <item name="colorPrimary">@color/light_blue_500</item>
-        <item name="colorPrimaryVariant">@color/light_blue_600</item>
-        <item name="colorSecondary">@color/cyan_300</item>
-        <item name="colorSecondaryVariant">@color/cyan_600</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorOnSecondary">@color/black</item>
         <item name="windowActionModeOverlay">true</item>
         <item name="android:windowBackground">@color/main_bg</item>
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
     </style>
-
-    <style name="Theme.MyAudioPlayer.Stater" parent="Theme.MyAudioPlayer">
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">
-            @android:color/transparent
-        </item>
-        <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">0</item>
+    <style name="Theme.MyAudioPlayer.LightBlue" parent="Theme.MyAudioPlayer">
+        <item name="colorPrimary">@color/light_blue_primary</item>
+        <item name="colorPrimaryDark">@color/light_blue_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/light_blue_primary_container</item>
+        <item name="colorPrimarySelected">@color/light_blue_primary_selected</item>
+        <item name="colorSecondary">@color/light_blue_secondary</item>
+        <item name="colorSecondarySelected">@color/light_blue_secondary_selected</item>
     </style>
 </resources>

@@ -15,7 +15,6 @@ import androidx.core.os.BundleCompat
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
-import com.mohammadkk.mymusicplayer.extensions.accentColor
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.setAnimatedVectorDrawable
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
@@ -46,7 +45,6 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
             binding.songProgress.max = max(savedInstanceState.getInt("progress_max"), 0)
             binding.songProgress.progress = max(savedInstanceState.getInt("progress_song"), 0)
         }
-        binding.songProgress.accentColor()
         binding.root.setOnClickListener {
             if (!isStopHandleClick) {
                 with(requireActivity()) {
@@ -80,7 +78,12 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
         }
     }
     private fun updateSongInfo() = _binding?.run {
-        val song = cacheSong ?: AudioPlayerRemote.currentSong
+        val currentSong = AudioPlayerRemote.currentSong
+        var song = cacheSong ?: currentSong
+        if (song.id != currentSong.id) {
+            cacheSong = currentSong
+            song = currentSong
+        }
         if (song.id == -1L && song.duration < 0) {
             val cover = GlideExtensions.getCoverArt(requireContext(), song.id, R.drawable.ic_audiotrack)
             trackImage.setImageDrawable(cover)

@@ -6,19 +6,19 @@
     android:layout_height="48dp"
     android:layout_marginHorizontal="@dimen/spacing_small"
     android:layout_marginTop="@dimen/spacing_small"
-    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="@dimen/spacing_small"
     app:rippleColor="?android:attr/colorControlHighlight">
-    
+
     <TextView
         android:id="@+id/tvSortItem"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:gravity="center_vertical"
-        android:paddingHorizontal="@dimen/spacing_tiny"
+        android:paddingHorizontal="@dimen/spacing_small"
         android:text="@string/album"
         android:textAppearance="@style/TextAppearance.Audio.BodyMedium" />
-    
+
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/ivSortItem"
         android:layout_width="wrap_content"
@@ -29,6 +29,5 @@
         android:rotation="0"
         android:scaleType="center"
         android:visibility="invisible"
-        app:srcCompat="@drawable/ic_north"
-        app:tint="?android:attr/colorControlNormal" />
+        app:srcCompat="@drawable/ic_arrow_upward" />
 </com.google.android.material.card.MaterialCardView>

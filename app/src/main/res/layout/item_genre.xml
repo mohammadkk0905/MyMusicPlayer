@@ -9,7 +9,7 @@
     android:layout_marginTop="@dimen/spacing_small"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/blue_primary_container"
+    app:cardBackgroundColor="?attr/colorSecondarySelected"
     app:cardCornerRadius="@dimen/spacing_medium">
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

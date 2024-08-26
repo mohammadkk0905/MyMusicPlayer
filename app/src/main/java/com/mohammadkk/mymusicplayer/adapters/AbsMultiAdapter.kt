@@ -51,7 +51,7 @@ abstract class AbsMultiAdapter<V : RecyclerView.ViewHolder, I>(
     protected fun toggleChecked(position: Int): Boolean {
         val identifier = getIdentifier(position) ?: return false
         if (!checked.remove(identifier)) checked.add(identifier)
-        notifyItemChanged(position)
+        notifyItemChanged(position, PAYLOAD_SELECTION_INDICATOR_CHANGED)
         updateCab()
         return true
     }
@@ -67,7 +67,7 @@ abstract class AbsMultiAdapter<V : RecyclerView.ViewHolder, I>(
             actionMode?.title = "$size/$itemCount"
         }
     }
-    protected fun safeNotifyItemChanged(position: Int) {
-        if (position != -1) notifyItemChanged(position)
+    private companion object {
+        val PAYLOAD_SELECTION_INDICATOR_CHANGED = Any()
     }
 }

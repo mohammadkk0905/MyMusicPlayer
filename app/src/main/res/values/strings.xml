@@ -73,6 +73,10 @@
     <string name="nothing_to_scan">Nothing to scan.</string>
     <string name="usb_device">USB device</string>
     <string name="usb_device_not_found">USB device not found</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_light_title">Light</string>
+    <string name="theme_dark_title">Dark</string>
+    <string name="theme_auto_title">System</string>
     <string name="set_cover_mode">Album covers</string>
     <string name="set_cover_mode_off">Off</string>
     <string name="set_cover_mode_media_store">Fast</string>

@@ -1,6 +1,7 @@
 package com.mohammadkk.mymusicplayer.dialogs
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,7 +18,7 @@ import com.mohammadkk.mymusicplayer.activities.BaseActivity
 import com.mohammadkk.mymusicplayer.databinding.DialogSortSheetBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemSortModeBinding
 import com.mohammadkk.mymusicplayer.extensions.applyFullHeightDialog
-import com.mohammadkk.mymusicplayer.extensions.getColorCompat
+import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import kotlin.math.abs
 
 class ChangeSortingDialog : BottomSheetDialogFragment() {
@@ -98,34 +99,27 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         _binding = null
     }
     private inner class SortAdapter : RecyclerView.Adapter<SortAdapter.SortHolder>() {
-        private val colors = Pair(
-            requireContext().getColorCompat(R.color.toolbar_bg),
-            requireContext().getColorCompat(R.color.blue_primary_container)
-        )
+        private val secondarySelected = requireContext().getAttrColorCompat(R.attr.colorSecondarySelected)
 
         inner class SortHolder(private val binding: ItemSortModeBinding): RecyclerView.ViewHolder(binding.root) {
-            fun bindItems(item: Pair<Int, Int>) {
-                with(binding) {
-                    tvSortItem.setText(item.first)
-                    ivSortItem.isInvisible = selectedPosition != absoluteAdapterPosition
-                    ivSortItem.rotation = if (!isDescendingSort) 0f else 180f
-                    root.setCardBackgroundColor(
-                        if (selectedPosition == absoluteAdapterPosition) {
-                            colors.second
-                        } else colors.first
-                    )
-                    root.setOnClickListener {
-                        if (absoluteAdapterPosition != selectedPosition) {
-                            isDescendingSort = false
-                            notifyItemChanged(selectedPosition)
-                            selectedPosition = absoluteAdapterPosition
-                            notifyItemChanged(absoluteAdapterPosition)
-                        } else {
-                            isDescendingSort = !isDescendingSort
-                            notifyItemChanged(selectedPosition)
-                        }
-                        setSortItem(item)
+            fun bindItems(item: Pair<Int, Int>) = with(binding) {
+                tvSortItem.setText(item.first)
+                ivSortItem.isInvisible = selectedPosition != absoluteAdapterPosition
+                ivSortItem.rotation = if (!isDescendingSort) 0f else 180f
+                root.setCardBackgroundColor(if (selectedPosition == absoluteAdapterPosition) {
+                    secondarySelected
+                } else Color.TRANSPARENT)
+                root.setOnClickListener {
+                    if (absoluteAdapterPosition != selectedPosition) {
+                        isDescendingSort = false
+                        notifyItemChanged(selectedPosition)
+                        selectedPosition = absoluteAdapterPosition
+                        notifyItemChanged(absoluteAdapterPosition)
+                    } else {
+                        isDescendingSort = !isDescendingSort
+                        notifyItemChanged(selectedPosition)
                     }
+                    setSortItem(item)
                 }
             }
         }

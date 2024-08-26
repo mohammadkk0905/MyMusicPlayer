@@ -63,11 +63,20 @@ class SongsAdapter(
     override fun onBindViewHolder(holder: SongHolder, position: Int) {
         holder.bindItems(dataSet[holder.absoluteAdapterPosition])
     }
-    fun setSelectedSong(song: Song) {
-        if (song.id != selectedSong.id) {
-            safeNotifyItemChanged(dataSet.indexOfFirst { it.id == selectedSong.id })
-            selectedSong = song
-            safeNotifyItemChanged(dataSet.indexOfFirst { it.id == selectedSong.id })
+    fun setPlaying(item: Song) {
+        if (selectedSong.id != item.id) {
+            val oldItem = selectedSong
+            selectedSong = item
+            // Remove the playing indicator from the old item
+            if (oldItem.id != -1L) {
+                val pos = dataSet.indexOfFirst { it.id == oldItem.id }
+                if (pos > -1) notifyItemChanged(pos, PAYLOAD_PLAYING_INDICATOR_CHANGED)
+            }
+            // Enable the playing indicator on the new item
+            if (item.id != -1L) {
+                val pos = dataSet.indexOfFirst { it.id == item.id }
+                if (pos > -1) notifyItemChanged(pos, PAYLOAD_PLAYING_INDICATOR_CHANGED)
+            }
         }
     }
     fun swapDataSet(dataSet: List<Song>) {
@@ -194,5 +203,8 @@ class SongsAdapter(
                 }
             }
         }
+    }
+    private companion object {
+        val PAYLOAD_PLAYING_INDICATOR_CHANGED = Any()
     }
 }

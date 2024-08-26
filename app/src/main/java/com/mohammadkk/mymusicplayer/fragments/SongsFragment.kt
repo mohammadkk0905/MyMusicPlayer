@@ -137,10 +137,10 @@ class SongsFragment : ABaseFragment(R.layout.fragment_songs) {
         binding.fabShuffle.text = items.size.toString()
     }
     override fun onServiceConnected() {
-        songsAdapter?.setSelectedSong(AudioPlayerRemote.currentSong)
+        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong)
     }
     override fun onPlayingMetaChanged() {
-        songsAdapter?.setSelectedSong(AudioPlayerRemote.currentSong)
+        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong)
     }
     override fun onMediaStoreChanged() {
         super.onMediaStoreChanged()

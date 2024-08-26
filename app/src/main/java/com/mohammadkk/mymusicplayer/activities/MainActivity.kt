@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityOptionsCompat
@@ -29,6 +30,7 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityMainBinding
 import com.mohammadkk.mymusicplayer.dialogs.ChangeSortingDialog
 import com.mohammadkk.mymusicplayer.dialogs.ScanMediaFoldersDialog
+import com.mohammadkk.mymusicplayer.extensions.getDefaultNightMode
 import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.isMassUsbDeviceConnected
@@ -235,6 +237,27 @@ class MainActivity : BaseActivity() {
                 ScanMediaFoldersDialog.create(true, supportFragmentManager)
             } else {
                 toast(R.string.usb_device_not_found)
+            }
+            R.id.action_ui_mode -> {
+                val items = arrayOf(
+                    getString(R.string.theme_light_title),
+                    getString(R.string.theme_dark_title),
+                    getString(R.string.theme_auto_title)
+                )
+                val index = min(max(settings.themeUI, 0), 2)
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.theme_title)
+                    .setSingleChoiceItems(items, index) { dialog, which ->
+                        if (settings.themeUI != which) {
+                            settings.themeUI = which
+                            AppCompatDelegate.setDefaultNightMode(
+                                which.getDefaultNightMode()
+                            )
+                        }
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
             }
             R.id.action_album_covers -> {
                 val items = arrayOf(

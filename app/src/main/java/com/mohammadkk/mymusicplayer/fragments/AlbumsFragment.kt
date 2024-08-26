@@ -24,7 +24,7 @@ import com.mohammadkk.mymusicplayer.databinding.ItemGridBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
-import com.mohammadkk.mymusicplayer.extensions.getColorCompat
+import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
@@ -109,7 +109,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
         context: FragmentActivity,
         var dataSet: MutableList<Album>
     ) : AbsMultiAdapter<AlbumsAdapter.ViewHolder, Album>(context), FastScroller.PopupTextProvider {
-        private val selectedColor = context.getColorCompat(R.color.blue_primary_container)
+        private val secondarySelected = context.getAttrColorCompat(R.attr.colorSecondarySelected)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
@@ -166,7 +166,7 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
             fun bindItems(album: Album) = with(binding) {
                 if (checked.contains(album)) {
                     checkbox.visibility = View.VISIBLE
-                    root.setCardBackgroundColor(selectedColor)
+                    root.setCardBackgroundColor(secondarySelected)
                 } else {
                     checkbox.visibility = View.INVISIBLE
                     root.setCardBackgroundColor(Color.TRANSPARENT)

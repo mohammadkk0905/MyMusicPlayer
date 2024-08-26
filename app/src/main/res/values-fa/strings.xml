@@ -73,6 +73,10 @@
     <string name="nothing_to_scan">هیچ چیزی برای اسکن نیست.</string>
     <string name="usb_device">دستگاه USB</string>
     <string name="usb_device_not_found">دستگاه USB ای یافت نشد</string>
+    <string name="theme_title">زمینه</string>
+    <string name="theme_auto_title">سامانه</string>
+    <string name="theme_dark_title">تاریک</string>
+    <string name="theme_light_title">روشن</string>
     <string name="set_cover_mode">جلدهای آلبوم</string>
     <string name="set_cover_mode_off">خاموش</string>
     <string name="set_cover_mode_media_store">سریع</string>
