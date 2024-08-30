@@ -39,6 +39,7 @@ import com.mohammadkk.mymusicplayer.Constant.makeShuffleList
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.extensions.getDrawableCompat
 import com.mohammadkk.mymusicplayer.extensions.musicPlaybackQueue
+import com.mohammadkk.mymusicplayer.extensions.notificationManager
 import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.extensions.toImmutableFlag
 import com.mohammadkk.mymusicplayer.extensions.toMediaSessionQueue
@@ -128,7 +129,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
     private var throttledSeekHandler: ThrottledSeekHandler? = null
     private var uiThreadHandler: Handler? = null
     private var wakeLock: WakeLock? = null
-    private var notificationManager: NotificationManager? = null
+    private var mNotificationManager: NotificationManager? = null
     private var isForeground = false
 
     override fun onCreate() {
@@ -145,7 +146,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
         playbackManager.setCallbacks(this)
         setupMediaSession()
         uiThreadHandler = Handler(Looper.getMainLooper())
-        notificationManager = getSystemService()
+        mNotificationManager = notificationManager
         initNotification()
         mediaStoreObserver = MediaStoreObserver(this, playerHandler!!)
         throttledSeekHandler = ThrottledSeekHandler(this, Handler(mainLooper))
@@ -277,7 +278,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
     }
     private fun initNotification() {
         playingNotification = PlayingNotificationMaterial.from(
-            this, notificationManager!!, mediaSession!!
+            this, mNotificationManager!!, mediaSession!!
         )
     }
 
@@ -432,7 +433,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
         pause()
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         isForeground = false
-        notificationManager?.cancel(PlayingNotification.NOTIFICATION_ID)
+        mNotificationManager?.cancel(PlayingNotification.NOTIFICATION_ID)
         stopSelf()
     }
     private fun releaseWakeLock() {
@@ -558,7 +559,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
     fun updateNotification() {
         if (currentSong.id != -1L) {
             updateMediaSessionMetaData {
-                notificationManager?.notify(
+                mNotificationManager?.notify(
                     PlayingNotification.NOTIFICATION_ID, playingNotification!!.build()
                 )
             }
@@ -675,7 +676,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
                 }
                 isForeground = true
             } else {
-                notificationManager?.notify(
+                mNotificationManager?.notify(
                     PlayingNotification.NOTIFICATION_ID, playingNotification!!.build()
                 )
             }
@@ -683,7 +684,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
     }
     private fun stopForegroundAndNotification() {
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-        notificationManager?.cancel(PlayingNotification.NOTIFICATION_ID)
+        mNotificationManager?.cancel(PlayingNotification.NOTIFICATION_ID)
         isForeground = false
     }
     @Synchronized

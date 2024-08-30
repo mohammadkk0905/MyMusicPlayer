@@ -18,7 +18,7 @@ import com.mohammadkk.mymusicplayer.activities.BaseActivity
 import com.mohammadkk.mymusicplayer.databinding.DialogSortSheetBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemSortModeBinding
 import com.mohammadkk.mymusicplayer.extensions.applyFullHeightDialog
-import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import kotlin.math.abs
 
 class ChangeSortingDialog : BottomSheetDialogFragment() {
@@ -99,15 +99,13 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         _binding = null
     }
     private inner class SortAdapter : RecyclerView.Adapter<SortAdapter.SortHolder>() {
-        private val secondarySelected = requireContext().getAttrColorCompat(R.attr.colorSecondarySelected)
-
         inner class SortHolder(private val binding: ItemSortModeBinding): RecyclerView.ViewHolder(binding.root) {
             fun bindItems(item: Pair<Int, Int>) = with(binding) {
                 tvSortItem.setText(item.first)
                 ivSortItem.isInvisible = selectedPosition != absoluteAdapterPosition
                 ivSortItem.rotation = if (!isDescendingSort) 0f else 180f
                 root.setCardBackgroundColor(if (selectedPosition == absoluteAdapterPosition) {
-                    secondarySelected
+                    ThemeManager.colorPrimaryAlpha
                 } else Color.TRANSPARENT)
                 root.setOnClickListener {
                     if (absoluteAdapterPosition != selectedPosition) {

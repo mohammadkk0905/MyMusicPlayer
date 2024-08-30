@@ -11,6 +11,7 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.mohammadkk.mymusicplayer.databinding.ActivityStaterBinding
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 
 class StaterActivity : AppCompatActivity() {
     private lateinit var binding: ActivityStaterBinding
@@ -35,6 +36,7 @@ class StaterActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.build(this)
         onBackPressedDispatcher.addCallback(this, true) {
         }
         binding = ActivityStaterBinding.inflate(layoutInflater)

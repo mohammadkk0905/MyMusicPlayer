@@ -45,9 +45,6 @@ fun Context.hasPermission(permission: String?): Boolean {
     if (permission == null) return false
     return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 }
-fun Context.sendIntent(actionName: String) {
-    packageName.plus(actionName)
-}
 fun Activity.hasNotificationApi(): Boolean {
     if (Constant.isTiramisuPlus()) {
         if (!hasPermission(Manifest.permission.POST_NOTIFICATIONS)) {

@@ -30,6 +30,7 @@ import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.utils.FileUtils
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,6 +49,7 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeManager.build(this)
         mLaunchActivity = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
             if (it.resultCode == Activity.RESULT_OK) {
                 deleteSongsFromQueues()

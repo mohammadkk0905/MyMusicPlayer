@@ -5,7 +5,6 @@
     style="@style/DefaultCardViewStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="@color/secondary_bg"
     app:cardCornerRadius="0dp"
     app:rippleColor="?android:attr/colorControlHighlight"
     app:strokeWidth="0dp">
@@ -76,12 +75,10 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginEnd="6dp"
-            app:indicatorColor="?attr/colorPrimary"
             app:indicatorTrackGapSize="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:trackColor="?attr/colorSecondarySelected"
             app:trackCornerRadius="@dimen/spacing_small" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

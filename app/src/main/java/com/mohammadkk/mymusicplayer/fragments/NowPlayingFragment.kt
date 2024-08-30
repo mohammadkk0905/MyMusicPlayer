@@ -2,6 +2,7 @@ package com.mohammadkk.mymusicplayer.fragments
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.provider.MediaStore
 import android.text.TextUtils
@@ -11,16 +12,19 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import androidx.core.app.ActivityOptionsCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.os.BundleCompat
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
 import com.mohammadkk.mymusicplayer.extensions.bind
+import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.setAnimatedVectorDrawable
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicProgressViewUpdate
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
@@ -40,6 +44,11 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentNowPlayingBinding.bind(view)
         view.setOnTouchListener(FlingPlayBackController())
+        with(binding) {
+            songProgress.setIndicatorColor(ThemeManager.colorPrimary)
+            songProgress.trackColor = ThemeManager.colorPrimaryAlpha
+            root.setCardBackgroundColor(ColorStateList.valueOf(darkAccentColor()))
+        }
         if (savedInstanceState != null) {
             cacheSong = BundleCompat.getParcelable(savedInstanceState, "cache_song", Song::class.java)
             binding.songProgress.max = max(savedInstanceState.getInt("progress_max"), 0)
@@ -64,6 +73,13 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
                 AudioPlayerRemote.resumePlaying()
             }
         }
+    }
+    private fun darkAccentColor(): Int {
+        val surface = requireContext().getColorCompat(R.color.main_bg)
+        return ColorUtils.blendARGB(
+            ThemeManager.colorPrimary, surface,
+            if (ThemeManager.isColorLight(surface)) 0.9f else 0.92f
+        )
     }
     override fun onStop() {
         super.onStop()

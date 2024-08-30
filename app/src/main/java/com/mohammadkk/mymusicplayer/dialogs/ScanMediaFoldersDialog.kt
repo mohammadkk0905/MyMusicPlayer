@@ -73,7 +73,6 @@ class ScanMediaFoldersDialog : DialogFragment() {
                     if (hasNotificationApi() && absolutePath != null) {
                         val serviceIntent = Intent(this, ScannerService::class.java)
                         serviceIntent.putExtra(AudioColumns.DATA, absolutePath)
-                        serviceIntent.action = Constant.SCANNER
                         try {
                             startService(serviceIntent)
                         } catch (e: Exception) {

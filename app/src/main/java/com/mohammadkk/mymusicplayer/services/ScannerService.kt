@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
@@ -18,6 +19,7 @@ import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.MainActivity
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
+import com.mohammadkk.mymusicplayer.extensions.notificationManager
 import com.mohammadkk.mymusicplayer.extensions.toImmutableFlag
 import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.utils.FileUtils
@@ -31,15 +33,15 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 class ScannerService : Service() {
-    private var notificationManager: NotificationManager? = null
+    private var mNotificationManager: NotificationManager? = null
     private val serviceScope = CoroutineScope(Job() + Main)
     private var currentPath = ""
     private var isForegroundService = false
 
     override fun onCreate() {
         super.onCreate()
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        createNotificationChannel(this, notificationManager!!)
+        mNotificationManager = notificationManager
+        createNotificationChannel(this, mNotificationManager!!)
         startForegroundWithNotify()
     }
     override fun onDestroy() {
@@ -51,9 +53,15 @@ class ScannerService : Service() {
         if (!Constant.isQPlus() && !hasPermission(Constant.STORAGE_PERMISSION)) {
             return START_NOT_STICKY
         }
-        if (intent?.action == Constant.SCANNER) {
-            startForegroundWithNotify()
-            listPaths(intent) { paths -> scanPaths(paths) }
+        if (intent != null) {
+            if (intent.action == MusicService.ACTION_STOP) {
+                stopForegroundOrNotification()
+                isForegroundService = false
+                stopSelf()
+            } else {
+                startForegroundWithNotify()
+                listPaths(intent) { paths -> scanPaths(paths) }
+            }
         }
         return START_NOT_STICKY
     }
@@ -78,9 +86,7 @@ class ScannerService : Service() {
             } catch (e: Exception) {
                 arrayOf()
             }
-            withContext(Dispatchers.Main) {
-                onDone(mPaths)
-            }
+            withContext(Main) { onDone(mPaths) }
         }
     }
     private fun createMediaScanNotification(text: String): Notification {
@@ -88,13 +94,13 @@ class ScannerService : Service() {
         cIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         val piIntent = PendingIntent.getActivity(this, 0, cIntent, (0).toImmutableFlag())
 
-        val nDismissedIntent = Intent(this, MusicService::class.java).setAction(
-            Constant.NOTIFICATION_DISMISSED
+        val serviceName = ComponentName(this, ScannerService::class.java)
+        val intent = Intent(MusicService.ACTION_QUIT)
+        intent.component = serviceName
+        val deleteIntent = PendingIntent.getService(
+            this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT.toImmutableFlag()
         )
-        val piDelete = PendingIntent.getService(
-            this, 0, nDismissedIntent, PendingIntent.FLAG_CANCEL_CURRENT.toImmutableFlag()
-        )
-
+        val dismissAction = NotificationCompat.Action(R.drawable.ic_close, getString(R.string.dismiss), retrieveStop())
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
             .setContentTitle(getString(R.string.scanning))
             .setSmallIcon(R.drawable.ic_audiotrack)
@@ -103,8 +109,9 @@ class ScannerService : Service() {
             .setContentIntent(piIntent)
             .setChannelId(NOTIFICATION_CHANNEL)
             .setCategory(Notification.CATEGORY_PROGRESS)
-            .setDeleteIntent(piDelete)
+            .setDeleteIntent(deleteIntent)
             .setOngoing(true)
+            .addAction(dismissAction)
             .setProgress(0, 0, true)
             .apply {
                 if (text.isNotEmpty()) {
@@ -112,11 +119,19 @@ class ScannerService : Service() {
                 }
             }.build()
     }
+    private fun retrieveStop(): PendingIntent {
+        val serviceName = ComponentName(this, ScannerService::class.java)
+        val intent = Intent(MusicService.ACTION_STOP)
+        intent.component = serviceName
+        return PendingIntent.getService(
+            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT.toImmutableFlag()
+        )
+    }
     private fun notifyNotification(notification: Notification) {
-        notificationManager?.notify(SCANNER_NOTIFICATION_ID, notification)
+        mNotificationManager?.notify(SCANNER_NOTIFICATION_ID, notification)
     }
     private fun cancelNotification() {
-        notificationManager?.cancel(SCANNER_NOTIFICATION_ID)
+        mNotificationManager?.cancel(SCANNER_NOTIFICATION_ID)
     }
     private fun scanPaths(toBeScanned: Array<String?>) {
         if (toBeScanned.isEmpty()) {

@@ -33,11 +33,6 @@ object Constant {
     const val GENRE_TAB = "GENRE"
     const val THROTTLE: Long = 500
 
-    // Notification
-    private const val PATH = "com.mohammadkk.mymusicplayer.action."
-    const val SCANNER = PATH + "SCANNER"
-    const val NOTIFICATION_DISMISSED = PATH + "NOTIFICATION_DISMISSED"
-
     val STORAGE_PERMISSION get() = when {
         isTiramisuPlus() -> Manifest.permission.READ_MEDIA_AUDIO
         isRPlus() -> Manifest.permission.READ_EXTERNAL_STORAGE

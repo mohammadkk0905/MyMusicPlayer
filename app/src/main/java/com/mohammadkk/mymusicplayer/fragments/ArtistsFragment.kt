@@ -24,7 +24,6 @@ import com.mohammadkk.mymusicplayer.databinding.ItemGridArtistBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
-import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
 import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
@@ -32,6 +31,7 @@ import com.mohammadkk.mymusicplayer.models.Artist
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScroller
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollerBuilder
 import com.mohammadkk.mymusicplayer.utils.Libraries
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
 import kotlin.math.abs
 
@@ -108,8 +108,6 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries) {
         context: FragmentActivity,
         var dataSet: MutableList<Artist>
     ) : AbsMultiAdapter<ArtistsAdapter.ViewHolder, Artist>(context), FastScroller.PopupTextProvider {
-        private val secondarySelected = context.getAttrColorCompat(R.attr.colorSecondarySelected)
-
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
             return ViewHolder(ItemGridArtistBinding.inflate(inflater, parent, false))
@@ -164,7 +162,7 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries) {
                 with(binding) {
                     if (checked.contains(artist)) {
                         checkbox.visibility = View.VISIBLE
-                        root.setCardBackgroundColor(secondarySelected)
+                        root.setCardBackgroundColor(ThemeManager.colorPrimaryAlpha)
                     } else {
                         checkbox.visibility = View.INVISIBLE
                         root.setCardBackgroundColor(Color.TRANSPARENT)

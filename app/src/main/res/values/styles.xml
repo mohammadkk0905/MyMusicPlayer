@@ -128,7 +128,7 @@
     </style>
     
     <style name="Widget.Audio.ActionMode" parent="@style/Widget.Material3.ActionMode">
-        <item name="background">?attr/colorPrimarySelected</item>
+        <item name="background">?attr/colorPrimaryContainer</item>
     </style>
     
     <style name="Widget.Audio.Slider" parent="Widget.Material3.Slider">

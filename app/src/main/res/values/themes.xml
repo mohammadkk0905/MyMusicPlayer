@@ -17,8 +17,7 @@
         <item name="colorPrimary">@color/light_blue_primary</item>
         <item name="colorPrimaryDark">@color/light_blue_primary_dark</item>
         <item name="colorPrimaryContainer">@color/light_blue_primary_container</item>
-        <item name="colorPrimarySelected">@color/light_blue_primary_selected</item>
         <item name="colorSecondary">@color/light_blue_secondary</item>
-        <item name="colorSecondarySelected">@color/light_blue_secondary_selected</item>
+        <item name="colorSecondaryContainer">@color/light_blue_secondary_container</item>
     </style>
 </resources>

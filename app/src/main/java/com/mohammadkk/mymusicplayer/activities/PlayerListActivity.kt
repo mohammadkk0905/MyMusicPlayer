@@ -208,7 +208,6 @@ class PlayerListActivity : BaseActivity() {
                     if (hasNotificationApi()) {
                         val serviceIntent = Intent(this@PlayerListActivity, ScannerService::class.java)
                         serviceIntent.putExtra(AudioColumns.DATA, settings.otgPartition)
-                        serviceIntent.action = Constant.SCANNER
                         try {
                             startService(serviceIntent)
                         } catch (e: Exception) {
