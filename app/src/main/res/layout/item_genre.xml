@@ -22,7 +22,7 @@
             android:layout_width="75dp"
             android:layout_height="75dp"
             android:layout_marginTop="24dp"
-            android:background="@color/cover_bg"
+            android:background="?attr/colorSurfaceContainer"
             android:elevation="@dimen/spacing_tiny"
             android:rotation="30"
             android:scaleType="centerCrop"

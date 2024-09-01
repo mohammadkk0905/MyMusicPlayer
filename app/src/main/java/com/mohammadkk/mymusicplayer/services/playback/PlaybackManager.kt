@@ -13,7 +13,7 @@ class PlaybackManager(val context: Context) {
 
     val isLocalPlayback get() = playbackLocation == PLAYBACK_LOCAL
 
-    private val audioSessionId: Int
+    val audioSessionId: Int
         get() = playback?.audioSessionId ?: 0
 
     val songDurationMillis: Int
@@ -86,5 +86,8 @@ class PlaybackManager(val context: Context) {
         }
         audioEffectsIntent.putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
         context.sendBroadcast(audioEffectsIntent)
+    }
+    fun setPlaybackSpeedPitch(playbackSpeed: Float, playbackPitch: Float) {
+        playback?.setPlaybackSpeedPitch(playbackSpeed, playbackPitch)
     }
 }

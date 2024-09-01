@@ -3,7 +3,6 @@ package com.mohammadkk.mymusicplayer.extensions
 import android.app.PendingIntent
 import android.content.ContentUris
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import android.media.MediaPlayer
 import android.media.PlaybackParams
 import android.net.Uri
@@ -15,8 +14,8 @@ import androidx.core.net.toUri
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.models.Song
 import java.io.File
-import java.text.DateFormat
-import java.util.Date
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 fun MediaPlayer.setPlaybackSpeedPitch(speed: Float, pitch: Float) {
@@ -55,9 +54,12 @@ fun Long.toFormattedDuration(isSeekBar: Boolean): String {
         }
     }
 }
-fun Long.toFormattedDate(): String = try {
-    val date = Date(this * 1000)
-    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, Locale.getDefault()).format(date)
+fun Long.toFormattedDate(isList: Boolean): String = try {
+    val calendar: Calendar = Calendar.getInstance()
+    val pattern = "dd/MM/yyyy hh:mm:ss"
+    calendar.timeInMillis = this
+    val sdf = SimpleDateFormat(pattern, if (isList) Locale.getDefault() else Locale.ENGLISH)
+    sdf.format(calendar.time)
 } catch (e: Exception) {
     ""
 }

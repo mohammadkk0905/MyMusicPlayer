@@ -46,6 +46,9 @@ object AudioPlayerRemote {
     val isShuffleMode: Boolean
         get() = musicService?.isShuffleMode ?: false
 
+    val audioSessionId: Int
+        get() = musicService?.audioSessionId ?: -1
+
     fun isPlaying(song: Song): Boolean {
         return if (!isPlaying) {
             false
@@ -147,9 +150,6 @@ object AudioPlayerRemote {
         val service = musicService ?: return false
         service.removeSongs(songs)
         return true
-    }
-    fun updateNotification() {
-        musicService?.updateNotification()
     }
     fun quit() {
         musicService?.quit()

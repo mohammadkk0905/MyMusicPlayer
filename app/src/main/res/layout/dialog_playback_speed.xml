@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="0dp"
+    android:paddingVertical="@dimen/spacing_mid_medium">
+    <TextView
+        android:id="@+id/playback_speed_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_medium"
+        android:layout_marginTop="@dimen/spacing_tiny"
+        android:text="@string/playback_speed"
+        android:textAppearance="@style/TextAppearance.Audio.TitleSmall"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <com.google.android.material.slider.Slider
+        android:id="@+id/playback_speed_slider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/spacing_tiny"
+        android:contentDescription="@string/playback_speed"
+        android:stepSize="0.05"
+        android:valueFrom="0.25"
+        android:valueTo="4.00"
+        app:labelBehavior="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/playback_speed_title"
+        app:tickVisible="false" />
+    <TextView
+        android:id="@+id/playback_speed_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_medium"
+        android:text="@string/playback_speed"
+        android:textAppearance="@style/TextAppearance.Audio.BodySmall"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/playback_speed_slider"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="1.00" />
+    <TextView
+        android:id="@+id/playback_pitch_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_medium"
+        android:layout_marginTop="@dimen/spacing_medium"
+        android:text="@string/playback_pitch"
+        android:textAppearance="@style/TextAppearance.Audio.TitleSmall"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/playback_speed_slider" />
+    <com.google.android.material.slider.Slider
+        android:id="@+id/playback_pitch_slider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/spacing_tiny"
+        android:contentDescription="@string/playback_pitch"
+        android:stepSize="0.05"
+        android:valueFrom="0.50"
+        android:valueTo="2.00"
+        app:labelBehavior="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/playback_pitch_title"
+        app:tickVisible="false" />
+    <TextView
+        android:id="@+id/playback_pitch_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/spacing_medium"
+        android:textAppearance="@style/TextAppearance.Audio.BodySmall"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/playback_pitch_slider"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="1.0" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,8 +11,8 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.mohammadkk.mymusicplayer.providers.SortedCursor;
 import com.mohammadkk.mymusicplayer.models.Song;
+import com.mohammadkk.mymusicplayer.providers.SortedCursor;
 
 import java.io.BufferedReader;
 import java.io.File;

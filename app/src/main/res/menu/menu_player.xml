@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_playback_speed"
+        android:title="@string/playback_speed"
+        android:visible="@bool/isMarshmallow"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_share"
+        android:title="@string/share" />
+    <item
+        android:id="@+id/action_details"
+        android:title="@string/action_details" />
+    <item
+        android:id="@+id/action_equalizer"
+        android:title="@string/equalizer"
+        app:showAsAction="never" />
+</menu>

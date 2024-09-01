@@ -31,6 +31,7 @@
         <activity
             android:name=".activities.PlayerActivity"
             android:exported="false"
+            android:label="@string/playing"
             android:launchMode="singleTask" />
         <activity
             android:name=".activities.PlayerListActivity"

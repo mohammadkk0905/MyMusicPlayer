@@ -3,8 +3,8 @@
     <color name="light_blue_primary_container">#004B70</color>
     <color name="light_blue_secondary">#96CCF8</color>
     <color name="light_blue_secondary_container">#384956</color>
+    <color name="light_blue_surface_container">#1C2024</color>
 
-    <color name="cover_bg">#202020</color>
     <color name="primary_divider">#383838</color>
     <color name="widgets_color">#FAFAFA</color>
     <color name="main_bg">#151515</color>

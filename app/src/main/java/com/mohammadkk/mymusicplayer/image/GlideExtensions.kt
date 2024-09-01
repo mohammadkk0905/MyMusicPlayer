@@ -52,6 +52,10 @@ object GlideExtensions {
         return MediaStoreSignature("", song.dateModified, 0)
     }
     fun getCoverArt(context: Context, songId: Long, @DrawableRes resId: Int): Drawable {
+        val cover = context.getDrawableCompat(resId).mutate()
+        return StyledDrawable(cover, getColor(context, songId))
+    }
+    fun getColor(context: Context, songId: Long): Int {
         if (colors == null) {
             colors = intArrayOf(
                 context.getColorCompat(R.color.blue_art),
@@ -63,9 +67,8 @@ object GlideExtensions {
                 context.getColorCompat(R.color.cyan_art)
             )
         }
-        val cover = context.getDrawableCompat(resId).mutate()
         val index = (songId % 7).toInt()
-        return StyledDrawable(cover, colors!![if (index >= 0) index else 0])
+        return colors!![if (index >= 0) index else 0]
     }
     private class StyledDrawable(private val inner: Drawable, @ColorInt color: Int) : Drawable() {
         init {

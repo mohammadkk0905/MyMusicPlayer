@@ -1,6 +1,7 @@
 package com.mohammadkk.mymusicplayer
 
 import android.app.Application
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.provider.MediaStore
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
@@ -53,6 +54,14 @@ class BaseSettings(val app: Application) {
     var genresSorting: Int
         get() = prefs.getInt("genres_sorting", Constant.SORT_BY_TITLE)
         set(value) = prefs.edit { putInt("genres_sorting", value) }
+
+    fun registerOnSharedPreferenceChangedListener(
+        listener: OnSharedPreferenceChangeListener,
+    ) = prefs.registerOnSharedPreferenceChangeListener(listener)
+
+    fun unregisterOnSharedPreferenceChangedListener(
+        changeListener: OnSharedPreferenceChangeListener,
+    ) = prefs.unregisterOnSharedPreferenceChangeListener(changeListener)
 
     var themeUI: Int
         get() = prefs.getInt("theme_ui_mode", 2)

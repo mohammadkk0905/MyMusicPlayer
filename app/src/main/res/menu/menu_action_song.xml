@@ -12,6 +12,11 @@
         android:title="@string/set_as_ringtone"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_details"
+        android:icon="@drawable/ic_info_outline"
+        android:title="@string/action_details"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_remove_file"
         android:icon="@drawable/ic_trash"
         android:title="@string/remove_from_device"

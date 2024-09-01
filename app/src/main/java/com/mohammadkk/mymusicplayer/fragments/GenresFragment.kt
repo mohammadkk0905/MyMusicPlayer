@@ -1,30 +1,36 @@
 package com.mohammadkk.mymusicplayer.fragments
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemGenreBinding
-import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.collectImmediately
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
+import com.mohammadkk.mymusicplayer.image.GlideExtensions
+import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
+import com.mohammadkk.mymusicplayer.image.palette.MusicColoredTarget
+import com.mohammadkk.mymusicplayer.image.palette.PaletteColors
 import com.mohammadkk.mymusicplayer.models.Genre
 import com.mohammadkk.mymusicplayer.utils.Libraries
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -109,6 +115,8 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
         private val context: FragmentActivity,
         var dataSet: List<Genre>
     ) : RecyclerView.Adapter<GenreAdapter.ViewHolder>() {
+        private val settings = BaseSettings.getInstance()
+
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val inflater = LayoutInflater.from(context)
             return ViewHolder(ItemGenreBinding.inflate(inflater, parent, false))
@@ -133,10 +141,30 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
                 context.startActivity(this, options)
             }
         }
-        private fun loadGenreImage(genre: Genre, image: AppCompatImageView) {
-            CoroutineScope(Dispatchers.IO).launch {
+        private fun loadGenreImage(genre: Genre, binding: ItemGenreBinding) {
+            context.lifecycleScope.launch(Dispatchers.IO) {
                 val genreSong = Libraries.songByGenre(context.contentResolver, genre.id)
-                withContext(Dispatchers.Main) { image.bind(genreSong, R.drawable.ic_audiotrack) }
+                withContext(Dispatchers.Main) {
+                    val drawable = GlideExtensions.getCoverArt(context, genreSong.id, R.drawable.ic_audiotrack)
+                    if (settings.coverMode != Constant.COVER_OFF) {
+                        Glide.with(context)
+                            .asBitmap()
+                            .getCoverOptions(genreSong, drawable)
+                            .load(GlideExtensions.getSongModel(genreSong))
+                            .into(object : MusicColoredTarget(binding.image) {
+                                override fun onResolveColor(colors: PaletteColors) {
+                                    binding.root.rippleColor = ColorStateList.valueOf(
+                                        ThemeManager.withAlpha(colors.backgroundColor, 0.35f)
+                                    )
+                                    binding.root.setCardBackgroundColor(colors.backgroundColor)
+                                    binding.tvTitle.setTextColor(colors.primaryTextColor)
+                                    binding.tvText.setTextColor(colors.secondaryTextColor)
+                                }
+                            })
+                    } else {
+                        binding.image.setImageDrawable(drawable)
+                    }
+                }
             }
         }
         inner class ViewHolder(val binding: ItemGenreBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -145,7 +173,7 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
                 binding.tvText.text = context.resources.getQuantityString(
                     R.plurals.songs_plural, genre.songCount, genre.songCount
                 )
-                loadGenreImage(genre, binding.image)
+                loadGenreImage(genre, binding)
                 binding.root.setOnClickListener {
                     if (!Constant.isBlockingClick()) {
                         startTracks(genre)

@@ -1,7 +1,6 @@
 package com.mohammadkk.mymusicplayer.activities
 
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import androidx.activity.addCallback
@@ -10,18 +9,23 @@ import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityStaterBinding
+import com.mohammadkk.mymusicplayer.extensions.getDrawableCompat
 import com.mohammadkk.mymusicplayer.utils.ThemeManager
 
 class StaterActivity : AppCompatActivity() {
     private lateinit var binding: ActivityStaterBinding
     private val callbackAnim = object : MotionLayout.TransitionListener {
         override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {
-            binding.imageStarter.background = GradientDrawable().apply {
-                orientation = GradientDrawable.Orientation.RIGHT_LEFT
-                colors = intArrayOf(Color.parseColor("#4AC9DA"), Color.parseColor("#1A88DF"))
-                shape = GradientDrawable.OVAL
+            val drawable = getDrawableCompat(R.drawable.ic_launcher_background)
+            if (drawable is GradientDrawable) {
+                drawable.shape = GradientDrawable.OVAL
+            } else if (drawable is MaterialShapeDrawable) {
+                drawable.setCornerSize(resources.displayMetrics.density * 63)
             }
+            binding.imageStarter.background = drawable
         }
         override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {
         }

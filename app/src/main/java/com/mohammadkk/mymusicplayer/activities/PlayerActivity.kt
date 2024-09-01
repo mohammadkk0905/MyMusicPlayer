@@ -1,13 +1,23 @@
 package com.mohammadkk.mymusicplayer.activities
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.res.ColorStateList
+import android.media.audiofx.AudioEffect
 import android.os.Bundle
+import android.view.MenuItem
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.ImageViewCompat
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerBinding
+import com.mohammadkk.mymusicplayer.dialogs.PlaybackSpeedDialog
+import com.mohammadkk.mymusicplayer.dialogs.SongDetailDialog
+import com.mohammadkk.mymusicplayer.dialogs.SongShareDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
+import com.mohammadkk.mymusicplayer.extensions.errorToast
 import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.overridePendingTransitionCompat
@@ -32,10 +42,9 @@ class PlayerActivity : BaseActivity(), MusicProgressViewUpdate.Callback {
         onBackPressedDispatcher.addCallback(mBackPressedCallback)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setSupportActionBar(binding.playbackToolbar)
         musicProgressViewUpdate = MusicProgressViewUpdate(this)
         addMusicServiceEventListener(musicServiceCallback)
-        supportActionBar?.title = getString(R.string.playing)
+        binding.playbackToolbar.setOnMenuItemClickListener { onSelectedItemMenu(it) }
         binding.playbackToolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         initializeSlider()
         initializeButtons()
@@ -122,6 +131,43 @@ class PlayerActivity : BaseActivity(), MusicProgressViewUpdate.Callback {
         binding.playbackRepeat.setOnClickListener {
             if (AudioPlayerRemote.cycleRepeatMode()) {
                 toast(AudioPlayerRemote.repeatMode.descriptionRes)
+            }
+        }
+    }
+    private fun onSelectedItemMenu(item: MenuItem): Boolean {
+        val song = AudioPlayerRemote.currentSong
+        when (item.itemId) {
+            R.id.action_playback_speed -> {
+                PlaybackSpeedDialog.show(supportFragmentManager)
+                return true
+            }
+            R.id.action_share -> {
+                SongShareDialog.show(song, supportFragmentManager)
+                return true
+            }
+            R.id.action_details -> {
+                SongDetailDialog.show(song, supportFragmentManager)
+                return true
+            }
+            R.id.action_equalizer -> {
+                openEqualizer(this)
+                return true
+            }
+        }
+        return false
+    }
+    private fun openEqualizer(activity: Activity) {
+        val sessionId = AudioPlayerRemote.audioSessionId
+        if (sessionId == AudioEffect.ERROR_BAD_VALUE) {
+            toast(R.string.no_audio_ID, Toast.LENGTH_LONG)
+        } else {
+            try {
+                val effects = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL)
+                effects.putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                effects.putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
+                activity.startActivityForResult(effects, 0)
+            } catch (e: ActivityNotFoundException) {
+                errorToast(getString(R.string.no_equalizer), Toast.LENGTH_LONG)
             }
         }
     }

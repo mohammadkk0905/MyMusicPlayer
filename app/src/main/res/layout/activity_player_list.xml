@@ -37,7 +37,7 @@
                         android:id="@+id/detailsAlbumArt"
                         android:layout_width="196dp"
                         android:layout_height="196dp"
-                        android:background="@color/cover_bg"
+                        android:background="?attr/colorSurfaceContainer"
                         android:scaleType="centerCrop"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"

@@ -16,6 +16,7 @@ import com.mohammadkk.mymusicplayer.activities.BaseActivity
 import com.mohammadkk.mymusicplayer.activities.PlayerActivity
 import com.mohammadkk.mymusicplayer.databinding.ItemListBinding
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
+import com.mohammadkk.mymusicplayer.dialogs.SongDetailDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.hasNotificationApi
@@ -128,6 +129,10 @@ class SongsAdapter(
                 }
                 return true
             }
+            R.id.action_details -> {
+                SongDetailDialog.show(song, context.supportFragmentManager)
+                return true
+            }
             R.id.action_remove_file -> {
                 DeleteSongsDialog.create(listOf(song), context.supportFragmentManager)
                 return true
@@ -159,10 +164,10 @@ class SongsAdapter(
                 context.getString(
                     R.string.duration_date_symbol,
                     song.duration.toFormattedDuration(false),
-                    song.dateModified.toFormattedDate()
+                    (song.dateModified * 1000).toFormattedDate(true)
                 )
             } else {
-                song.dateModified.toFormattedDate()
+                song.dateModified.toFormattedDate(true)
             }
             image.bind(song, R.drawable.ic_audiotrack)
             root.setOnClickListener {
@@ -195,9 +200,7 @@ class SongsAdapter(
                             }
                         }
                         popupMenu.setForceShowIcon(true)
-                        popupMenu.setOnMenuItemClickListener {
-                            clickHandlePopupMenu(it, dataSet[absoluteAdapterPosition])
-                        }
+                        popupMenu.setOnMenuItemClickListener { clickHandlePopupMenu(it, song) }
                         popupMenu.show()
                     }
                 }

@@ -15,12 +15,12 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.bumptech.glide.util.Util.isOnMainThread
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayoutMediator
@@ -271,8 +271,11 @@ class MainActivity : BaseActivity() {
                     .setSingleChoiceItems(items, index) { dialog, which ->
                         if (settings.coverMode != which) {
                             settings.coverMode = which
-                            reactivity()
-                            AudioPlayerRemote.updateNotification()
+                            if (isOnMainThread()) {
+                                recreate()
+                            } else {
+                                runOnUiThread { recreate() }
+                            }
                         }
                         dialog.dismiss()
                     }
@@ -281,15 +284,6 @@ class MainActivity : BaseActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
-    }
-    private fun reactivity() {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("song_tab", binding.mainPager.currentItem)
-        val options = ActivityOptionsCompat.makeCustomAnimation(
-            this, android.R.anim.fade_in, android.R.anim.fade_out
-        ).toBundle()
-        startActivity(intent, options)
-        finishAfterTransition()
     }
     override fun onStart() {
         super.onStart()

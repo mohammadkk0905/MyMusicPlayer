@@ -20,7 +20,6 @@ import android.widget.Toast
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
@@ -71,7 +70,7 @@ fun Context.getColorCompat(@ColorRes id: Int): Int {
     return ResourcesCompat.getColor(resources, id, theme)
 }
 fun Context.getDrawableCompat(@DrawableRes drawableRes: Int): Drawable {
-    return requireNotNull(ContextCompat.getDrawable(this, drawableRes)) {
+    return requireNotNull(ResourcesCompat.getDrawable(resources, drawableRes, theme)) {
         "Invalid resource: Drawable was null"
     }
 }
@@ -85,10 +84,10 @@ fun Context.getAttrColorCompat(@AttrRes attrRes: Int): Int {
     }
     return getColorCompat(color)
 }
-fun AppCompatActivity.overridePendingTransitionCompat(isClose: Boolean, enterAnim: Int, exitAnim: Int) {
+fun Activity.overridePendingTransitionCompat(isClose: Boolean, enterAnim: Int, exitAnim: Int) {
     if (Constant.isUpsideDownCakePlus()) {
         overrideActivityTransition(
-            if (isClose) AppCompatActivity.OVERRIDE_TRANSITION_CLOSE else AppCompatActivity.OVERRIDE_TRANSITION_CLOSE,
+            if (isClose) Activity.OVERRIDE_TRANSITION_CLOSE else Activity.OVERRIDE_TRANSITION_OPEN,
             enterAnim, exitAnim
         )
     } else {

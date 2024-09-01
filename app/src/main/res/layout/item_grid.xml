@@ -15,7 +15,7 @@
             android:id="@+id/image"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="@color/cover_bg"
+            android:background="?attr/colorSurfaceContainer"
             android:contentDescription="@string/songs"
             android:scaleType="centerCrop"
             app:layout_constraintDimensionRatio="1:1"

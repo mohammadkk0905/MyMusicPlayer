@@ -15,12 +15,13 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-        
+
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/playback_toolbar"
             style="@style/Widget.Audio.Toolbar.Icon"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            app:menu="@menu/menu_player"
             app:navigationIconTint="@color/widgets_color"
             app:title="@string/playing"
             app:titleCentered="true" />

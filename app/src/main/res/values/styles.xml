@@ -99,7 +99,7 @@
         <item name="android:layout_height">0dp</item>
         <item name="layout_constraintDimensionRatio">1</item>
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Material3.MediumComponent</item>
-        <item name="android:background">@color/cover_bg</item>
+        <item name="android:background">?attr/colorSurfaceContainer</item>
     </style>
     
     <style name="Widget.Audio.TextView.Primary" parent="Widget.Audio.TextView.Base">

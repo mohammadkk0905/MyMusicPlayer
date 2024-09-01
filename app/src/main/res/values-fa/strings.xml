@@ -12,6 +12,7 @@
         <item quantity="one">%d آهنگ</item>
         <item quantity="other">%d آهنگ</item>
     </plurals>
+    <string name="action_details">جزئيات</string>
     <string name="albums">آلبوم‌ها</string>
     <string name="artists">هنرمندان</string>
     <string name="genres">سبک‌ها</string>
@@ -40,6 +41,10 @@
     <string name="descending">نزولی</string>
     <string name="recheck_library">بررسی مجدد کتابخانه</string>
     <string name="share">اشتراک گذاری</string>
+    <string name="what_do_you_want_to_share">چه چیزی را میخوای به اشتراک بگذاری؟</string>
+    <string name="currently_listening_to_x_by_x">در حال حاضر شما به %1$s از %2$s گوش می‌دهید.</string>
+    <string name="audio_file_sharing">اشتراک گذاری فایل صوتی</string>
+    <string name="audio_image_sharing">اشتراک گذاری تصویر فایل صوتی</string>
     <string name="remove_from_device">حذف از دستگاه</string>
     <string name="unknown_error_occurred">یک خطای ناشناخته رخ داد</string>
     <string name="no_app_found">برنامهٔ معتبری پیدا نشد</string>
@@ -54,15 +59,25 @@
     <string name="repeat_off">تکرار خاموش شد</string>
     <string name="repeat_all">تکرار همه روشن شد</string>
     <string name="repeat_song">تکرار آهنگ فعلی</string>
+    <string name="reset_action">بازنشانی</string>
+    <string name="label_file_name">نام فایل</string>
+    <string name="label_file_path">مسیر فایل</string>
+    <string name="label_file_size">سایز فایل</string>
+    <string name="label_file_format">فرمت</string>
+    <string name="label_bitrate">نرخ بیت</string>
+    <string name="label_sampling_rate">نرخ نمونه‌گذاری</string>
     <string name="stop_playback_after_curr_song">توقف پخش پس از آهنگ فعلی</string>
     <string name="playing_notification_name">اعلان موسیقی در حال پخش</string>
     <string name="playing_notification_description">اعلان موسیقی در حال پخش امکاناتی برای پخش و قطع کردن و… دارد.</string>
     <string name="now_playing_queue">لیست درحال پخش</string>
+    <string name="playback_speed">سرعت پخش</string>
+    <string name="playback_pitch">میزان صدا</string>
     <string name="playing">در حال پخش</string>
     <string name="play_all">پخش همه</string>
     <string name="previous">قبلی</string>
     <string name="play_pause">پخش / مکث</string>
     <string name="next">بعدی</string>
+    <string name="save">ذخیره</string>
     <string name="shuffle">حالت مخلوط</string>
     <string name="shuffle_enabled">پخش تصادفی فعال شد</string>
     <string name="shuffle_disabled">پخش تصادفی غیر فعال شد</string>
@@ -81,4 +96,7 @@
     <string name="set_cover_mode_off">خاموش</string>
     <string name="set_cover_mode_media_store">سریع</string>
     <string name="set_cover_mode_quality">کیفیت بالا</string>
+    <string name="equalizer">اکولایزر</string>
+    <string name="no_audio_ID">ابتدا یک آهنگ پخش کنید، سپس دوباره امتحان کنید.</string>
+    <string name="no_equalizer">هیچ اکولایزری یافت نشد.</string>
 </resources>

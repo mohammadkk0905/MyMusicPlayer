@@ -8,8 +8,8 @@
     tools:context=".activities.StaterActivity">
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/image_starter"
-        android:layout_width="125dp"
-        android:layout_height="125dp"
+        android:layout_width="126dp"
+        android:layout_height="126dp"
         android:alpha="0.5"
         android:contentDescription="@string/app_name"
         android:scaleX="0.5"

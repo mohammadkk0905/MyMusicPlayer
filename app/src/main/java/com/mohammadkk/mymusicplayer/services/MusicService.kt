@@ -9,6 +9,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.pm.ServiceInfo
 import android.database.ContentObserver
 import android.graphics.Bitmap
@@ -63,7 +65,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MusicService : Service(), Playback.PlaybackCallbacks {
+class MusicService : Service(), Playback.PlaybackCallbacks, OnSharedPreferenceChangeListener {
     private val musicBinder: IBinder = MusicBinder()
     private val settings = BaseSettings.getInstance()
 
@@ -160,6 +162,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
             true,
             mediaStoreObserver
         )
+        settings.registerOnSharedPreferenceChangedListener(this)
         restoreState()
         sendBroadcast(Intent("$APP_PACKAGE_NAME.MUSIC_SERVICE_CREATED"))
         registerHeadsetEvents()
@@ -176,6 +179,7 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
         releaseResources()
         serviceScope.cancel()
         contentResolver.unregisterContentObserver(mediaStoreObserver)
+        settings.unregisterOnSharedPreferenceChangedListener(this)
         wakeLock?.release()
         sendBroadcast(Intent("$APP_PACKAGE_NAME.MUSIC_SERVICE_DESTROYED"))
     }
@@ -185,6 +189,9 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
     fun cycleRepeatMode() {
         repeatMode = repeatMode.nextPlayBackRepeat
     }
+
+    val audioSessionId: Int
+        get() = playbackManager.audioSessionId
 
     val currentSong: Song
         get() = getSongAt(getPosition())
@@ -294,6 +301,21 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
     }
     override fun onBind(intent: Intent): IBinder {
         return musicBinder
+    }
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        when (key) {
+            "playback_speed", "playback_pitch" -> {
+                updateMediaSessionPlaybackState()
+                playbackManager.setPlaybackSpeedPitch(settings.playbackSpeed, settings.playbackPitch)
+            }
+            "cover_mode" -> if (currentSong.id != -1L) {
+                updateMediaSessionMetaData {
+                    mNotificationManager?.notify(
+                        PlayingNotification.NOTIFICATION_ID, playingNotification!!.build()
+                    )
+                }
+            }
+        }
     }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent != null && intent.action != null) {
@@ -555,15 +577,6 @@ class MusicService : Service(), Playback.PlaybackCallbacks {
         )
 
         mediaSession?.setPlaybackState(stateBuilder.build())
-    }
-    fun updateNotification() {
-        if (currentSong.id != -1L) {
-            updateMediaSessionMetaData {
-                mNotificationManager?.notify(
-                    PlayingNotification.NOTIFICATION_ID, playingNotification!!.build()
-                )
-            }
-        }
     }
     @SuppressLint("CheckResult")
     fun updateMediaSessionMetaData(onCompletion: () -> Unit) {

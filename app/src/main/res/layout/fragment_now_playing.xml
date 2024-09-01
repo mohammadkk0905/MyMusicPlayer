@@ -22,7 +22,7 @@
             android:layout_width="45dp"
             android:layout_height="45dp"
             android:layout_marginStart="@dimen/spacing_small"
-            android:background="@color/cover_bg"
+            android:background="?attr/colorSurfaceContainer"
             android:scaleType="centerCrop"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"

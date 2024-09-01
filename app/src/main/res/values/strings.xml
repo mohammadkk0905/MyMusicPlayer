@@ -12,6 +12,7 @@
         <item quantity="one">%d Song</item>
         <item quantity="other">%d Songs</item>
     </plurals>
+    <string name="action_details">Details</string>
     <string name="albums">Albums</string>
     <string name="artists">Artists</string>
     <string name="genres">Genres</string>
@@ -40,6 +41,10 @@
     <string name="descending">Descending</string>
     <string name="recheck_library">Recheck the library</string>
     <string name="share">Share</string>
+    <string name="what_do_you_want_to_share">What do you want to share?</string>
+    <string name="currently_listening_to_x_by_x">Currently listening to %1$s by %2$s.</string>
+    <string name="audio_file_sharing">Audio file sharing</string>
+    <string name="audio_image_sharing">Share image audio file</string>
     <string name="remove_from_device">Remove from device</string>
     <string name="unknown_error_occurred">An unknown error occurred</string>
     <string name="no_app_found">No valid app found</string>
@@ -54,15 +59,25 @@
     <string name="repeat_off">Replay turned off</string>
     <string name="repeat_all">Repeat all turned on</string>
     <string name="repeat_song">Repeat the current song</string>
+    <string name="reset_action">Reset</string>
+    <string name="label_file_name">File name</string>
+    <string name="label_file_path">File path</string>
+    <string name="label_file_size">File Size</string>
+    <string name="label_file_format">Format</string>
+    <string name="label_bitrate">Bitrate</string>
+    <string name="label_sampling_rate">Sampling rate</string>
     <string name="stop_playback_after_curr_song">Stop playback after the current song</string>
     <string name="playing_notification_name">Playing notification</string>
     <string name="playing_notification_description">The playing notification has options for play/pause etc.</string>
     <string name="now_playing_queue">Now playing queue</string>
+    <string name="playback_speed">Playback Speed</string>
+    <string name="playback_pitch">Pitch</string>
     <string name="playing">Playing</string>
     <string name="play_all">Play all</string>
     <string name="previous">Previous</string>
     <string name="play_pause">Play / Pause</string>
     <string name="next">Next</string>
+    <string name="save">Save</string>
     <string name="shuffle">Shuffle</string>
     <string name="shuffle_enabled">Random play is activated</string>
     <string name="shuffle_disabled">Random play disabled</string>
@@ -81,4 +96,7 @@
     <string name="set_cover_mode_off">Off</string>
     <string name="set_cover_mode_media_store">Fast</string>
     <string name="set_cover_mode_quality">High quality</string>
+    <string name="equalizer">Equalizer</string>
+    <string name="no_audio_ID">Play a song first, then try again.</string>
+    <string name="no_equalizer">No equalizer found.</string>
 </resources>
