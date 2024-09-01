@@ -6,14 +6,14 @@
 <br>https://drive.google.com/file/d/12XfB1rxOrIA4JA3d5RNlVocNIv3crnS4/view (v1.3.0)
 
 <b>Some ScreenShots(Actual App Even Looks Better 😃):</b></br>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/master/music_player_screenshots/screen_2.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_7.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_5.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_1.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_8.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_6.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_3.png" width=30% height=30%/>
-<img src="https://github.com/mohammadkk0905/MyMusicPlayer/tree/master/player_screenshots/screen_4.png" width=30% height=30%/>  
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_1.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_2.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_3.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_4.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_5.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_6.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_7.jpg" width=30% height=30%/>
+<img src="https://github.com/mohammadkk0905/MyMusicPlayer/blob/master/player_screenshots/screen_8.jpg" width=30% height=30%/>
 <br>
 <br>
 
