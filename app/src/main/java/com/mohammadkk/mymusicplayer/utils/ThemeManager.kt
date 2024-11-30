@@ -1,28 +1,43 @@
 package com.mohammadkk.mymusicplayer.utils
 
+import android.content.res.Configuration
+import android.content.res.Resources
 import android.graphics.Color
 import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
+import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.FragmentActivity
+import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import kotlin.math.max
 import kotlin.math.min
 
 object ThemeManager {
-    var colorPrimary: Int = 0
-        private set
+    private var initializer = false
+    private val themeColors = intArrayOf(0, 0, 0, 0)
 
-    var colorPrimaryAlpha: Int = 0
-        private set
-
-    var colorSurfaceContainer: Int = 0
-        private set
+    val colorPrimary: Int get() = themeColors[0]
+    val colorPrimaryContainer: Int get() = themeColors[1]
+    val colorSurface: Int get() = themeColors[2]
+    val colorSurfaceContainer: Int get() = themeColors[3]
 
     fun build(context: FragmentActivity) {
-        colorPrimary = context.getColorCompat(R.color.light_blue_primary)
-        colorPrimaryAlpha = withAlpha(colorPrimary, 0.2f)
-        colorSurfaceContainer = context.getColorCompat(R.color.light_blue_surface_container)
+        if (initializer) return
+        BaseSettings.initialize(context.application)
+        themeColors[0] = context.getColorCompat(R.color.light_blue_primary)
+        themeColors[1] = context.getColorCompat(R.color.light_blue_primary_container)
+        themeColors[2] = context.getColorCompat(R.color.light_blue_surface)
+        themeColors[3] = context.getColorCompat(R.color.light_blue_surface_container)
+        initializer = true
+    }
+    @ColorInt
+    fun darkenColor(@ColorInt color: Int, value: Float): Int {
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(color, hsl)
+        hsl[2] -= value
+        hsl[2] = hsl[2].coerceIn(0f, 1f)
+        return ColorUtils.HSLToColor(hsl)
     }
     @ColorInt
     fun withAlpha(@ColorInt baseColor: Int, @FloatRange(from = 0.0, to = 1.0) alpha: Float): Int {
@@ -36,21 +51,21 @@ object ThemeManager {
         return darkness < 0.4
     }
     @JvmStatic
-    @ColorInt
-    fun primaryTextColor(isDarkMode: Boolean): Int {
-        return if (isDarkMode) {
-            Color.parseColor("#ffffffff")
-        } else {
-            Color.parseColor("#de000000")
-        }
+    fun isNightTheme(resources: Resources): Boolean {
+        val uiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return uiMode == Configuration.UI_MODE_NIGHT_YES
     }
     @JvmStatic
     @ColorInt
-    fun secondaryTextColor(isDarkMode: Boolean): Int {
-        return if (isDarkMode) {
-            Color.parseColor("#b3ffffff")
-        } else {
-            Color.parseColor("#8a000000")
-        }
+    fun primaryTextColor(dark: Boolean): Int {
+        return if (dark) Color.WHITE else withAlpha(Color.BLACK, 0.87f)
+    }
+    @JvmStatic
+    @ColorInt
+    fun secondaryTextColor(dark: Boolean): Int {
+        return if (dark) withAlpha(Color.WHITE, 0.70f) else withAlpha(Color.BLACK, 0.54f)
+    }
+    fun clear() {
+        initializer = false
     }
 }

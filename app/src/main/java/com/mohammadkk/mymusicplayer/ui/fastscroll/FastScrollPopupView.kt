@@ -18,7 +18,6 @@ import androidx.core.widget.TextViewCompat
 import com.google.android.material.textview.MaterialTextView
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.extensions.getAttrColorCompat
-import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.isRtl
 import com.google.android.material.R as MR
 
@@ -32,7 +31,7 @@ class FastScrollPopupView @JvmOverloads constructor(
         minimumHeight = context.resources.getDimensionPixelSize(R.dimen.fast_scroll_popup_min_height)
 
         TextViewCompat.setTextAppearance(this, MR.style.TextAppearance_Material3_HeadlineLarge)
-        setTextColor(context.getColorCompat(R.color.main_bg))
+        setTextColor(context.getAttrColorCompat(MR.attr.colorOnSecondary))
         ellipsize = TextUtils.TruncateAt.MIDDLE
         gravity = Gravity.CENTER
         includeFontPadding = false

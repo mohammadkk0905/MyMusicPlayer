@@ -73,6 +73,17 @@ fun Int.toImmutableFlag(): Int {
     if (Constant.isMarshmallowPlus()) flags = flags or PendingIntent.FLAG_IMMUTABLE
     return flags
 }
+fun String?.makeSectionName(): String {
+    if (this.isNullOrEmpty()) return ""
+    var str = this.trim { it <= ' ' }.lowercase()
+    str = when {
+        str.startsWith("the ") -> str.substring(4)
+        str.startsWith("an ") -> str.substring(3)
+        str.startsWith("a ") -> str.substring(2)
+        else -> str
+    }
+    return if (str.isEmpty()) "" else str[0].uppercase()
+}
 fun Song.toProviderUri(context: Context): Uri {
     return if (isOTGMode() || data.startsWith("content://")) {
         Uri.parse(data)

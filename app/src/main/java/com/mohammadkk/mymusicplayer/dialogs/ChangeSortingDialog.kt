@@ -1,7 +1,6 @@
 package com.mohammadkk.mymusicplayer.dialogs
 
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,72 +13,26 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.BaseActivity
+import com.mohammadkk.mymusicplayer.activities.base.MusicServiceActivity
 import com.mohammadkk.mymusicplayer.databinding.DialogSortSheetBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemSortModeBinding
 import com.mohammadkk.mymusicplayer.extensions.applyFullHeightDialog
-import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import kotlin.math.abs
 
 class ChangeSortingDialog : BottomSheetDialogFragment() {
     private var _binding: DialogSortSheetBinding? = null
-    private val sortItems = mutableListOf<Pair<Int, Int>>()
     private val settings = BaseSettings.getInstance()
     private var modeDialog = 0
-    private var baseActivity: BaseActivity? = null
-    private var mSortOrder = 1
-    private var selectedPosition = 0
-    private var isDescendingSort = false
+    private var baseActivity: MusicServiceActivity? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         modeDialog = arguments?.getInt("change_sort_mode") ?: 0
         try {
-            baseActivity = activity as BaseActivity
+            baseActivity = activity as MusicServiceActivity
         } catch (e: ClassCastException) {
             e.printStackTrace()
         }
-        initializeList()
-    }
-    private fun initializeList() {
-        sortItems.clear()
-        mSortOrder = settings.songsSorting
-        var sortName = abs(mSortOrder)
-        when (modeDialog) {
-            0 -> {
-                sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
-                sortItems.add(Pair(R.string.album, Constant.SORT_BY_ALBUM))
-                sortItems.add(Pair(R.string.artist, Constant.SORT_BY_ARTIST))
-                sortItems.add(Pair(R.string.duration, Constant.SORT_BY_DURATION))
-                sortItems.add(Pair(R.string.date_added, Constant.SORT_BY_DATE_ADDED))
-                sortItems.add(Pair(R.string.date_modified, Constant.SORT_BY_DATE_MODIFIED))
-            }
-            1 -> {
-                mSortOrder = settings.albumsSorting
-                sortName = abs(mSortOrder)
-                sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
-                sortItems.add(Pair(R.string.artist, Constant.SORT_BY_ARTIST))
-                sortItems.add(Pair(R.string.year, Constant.SORT_BY_YEAR))
-                sortItems.add(Pair(R.string.duration, Constant.SORT_BY_DURATION))
-                sortItems.add(Pair(R.string.song_count, Constant.SORT_BY_SONGS))
-            }
-            2 -> {
-                mSortOrder = settings.artistsSorting
-                sortName = abs(mSortOrder)
-                sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
-                sortItems.add(Pair(R.string.duration, Constant.SORT_BY_DURATION))
-                sortItems.add(Pair(R.string.song_count, Constant.SORT_BY_SONGS))
-                sortItems.add(Pair(R.string.album_count, Constant.SORT_BY_ALBUMS))
-            }
-            3 -> {
-                mSortOrder = settings.genresSorting
-                sortName = abs(mSortOrder)
-                sortItems.add(Pair(R.string.title, Constant.SORT_BY_TITLE))
-                sortItems.add(Pair(R.string.song_count, Constant.SORT_BY_SONGS))
-            }
-        }
-        selectedPosition = sortItems.indexOfFirst { it.second == sortName }
-        isDescendingSort = mSortOrder < 0
     }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         _binding = DialogSortSheetBinding.inflate(inflater, container, false)
@@ -99,27 +52,43 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         _binding = null
     }
     private inner class SortAdapter : RecyclerView.Adapter<SortAdapter.SortHolder>() {
-        inner class SortHolder(private val binding: ItemSortModeBinding): RecyclerView.ViewHolder(binding.root) {
-            fun bindItems(item: Pair<Int, Int>) = with(binding) {
-                tvSortItem.setText(item.first)
-                ivSortItem.isInvisible = selectedPosition != absoluteAdapterPosition
-                ivSortItem.rotation = if (!isDescendingSort) 0f else 180f
-                root.setCardBackgroundColor(if (selectedPosition == absoluteAdapterPosition) {
-                    ThemeManager.colorPrimaryAlpha
-                } else Color.TRANSPARENT)
-                root.setOnClickListener {
-                    if (absoluteAdapterPosition != selectedPosition) {
-                        isDescendingSort = false
-                        notifyItemChanged(selectedPosition)
-                        selectedPosition = absoluteAdapterPosition
-                        notifyItemChanged(absoluteAdapterPosition)
-                    } else {
-                        isDescendingSort = !isDescendingSort
-                        notifyItemChanged(selectedPosition)
-                    }
-                    setSortItem(item)
+        private val sortItems: IntArray
+        private var mSortOrder = 1
+        private var selectedPosition = 0
+        private var isDescendingSort = false
+
+        init {
+            mSortOrder = settings.songsSorting
+            sortItems = when (modeDialog) {
+                0 -> {
+                    intArrayOf(
+                        Constant.SORT_BY_TITLE, Constant.SORT_BY_ALBUM,
+                        Constant.SORT_BY_ARTIST, Constant.SORT_BY_DURATION,
+                        Constant.SORT_BY_DATE_ADDED, Constant.SORT_BY_DATE_MODIFIED
+                    )
+                }
+                1 -> {
+                    mSortOrder = settings.albumsSorting
+                    intArrayOf(
+                        Constant.SORT_BY_TITLE, Constant.SORT_BY_ARTIST,
+                        Constant.SORT_BY_YEAR, Constant.SORT_BY_DURATION,
+                        Constant.SORT_BY_SONGS
+                    )
+                }
+                2 -> {
+                    mSortOrder = settings.artistsSorting
+                    intArrayOf(
+                        Constant.SORT_BY_TITLE, Constant.SORT_BY_DURATION,
+                        Constant.SORT_BY_SONGS, Constant.SORT_BY_ALBUMS
+                    )
+                }
+                else -> {
+                    mSortOrder = settings.genresSorting
+                    intArrayOf(Constant.SORT_BY_TITLE, Constant.SORT_BY_SONGS)
                 }
             }
+            selectedPosition = sortItems.indexOfFirst { it == abs(mSortOrder) }
+            isDescendingSort = mSortOrder < 0
         }
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SortHolder {
             val inflater = LayoutInflater.from(parent.context)
@@ -131,15 +100,11 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
         override fun onBindViewHolder(holder: SortHolder, position: Int) {
             holder.bindItems(sortItems[holder.absoluteAdapterPosition])
         }
-        private fun setSortItem(itemSort: Pair<Int, Int>) {
-            var sortName = itemSort.second
+        private fun setSortItem(itemSort: Int) {
+            var sortName = itemSort
             if (mSortOrder < 0) sortName *= -1
-            if (!isDescendingSort) {
-                if (sortName < 0) sortName = abs(sortName)
-            }
-            if (isDescendingSort) {
-                if (sortName > 0) sortName *= -1
-            }
+            if (!isDescendingSort) if (sortName < 0) sortName = abs(sortName)
+            if (isDescendingSort) if (sortName > 0) sortName *= -1
             if (sortName != mSortOrder) {
                 when (modeDialog) {
                     0 -> settings.songsSorting = sortName
@@ -149,6 +114,43 @@ class ChangeSortingDialog : BottomSheetDialogFragment() {
                 }
                 baseActivity?.onReloadLibrary(modeDialog)
                 dismiss()
+            }
+        }
+        inner class SortHolder(private val binding: ItemSortModeBinding): RecyclerView.ViewHolder(binding.root) {
+            fun bindItems(sort: Int) = with(binding) {
+                tvSortLabel.setText(getStringBySort(sort))
+                ivArrow.isInvisible = selectedPosition != absoluteAdapterPosition
+                ivArrow.rotation = if (!isDescendingSort) 0f else 180f
+                if (selectedPosition == absoluteAdapterPosition) {
+                    tvSortLabel.isSelected = true
+                    selectedThumbnailOverlay.visibility = View.VISIBLE
+                } else {
+                    tvSortLabel.isSelected = false
+                    selectedThumbnailOverlay.visibility = View.GONE
+                }
+                root.setOnClickListener {
+                    if (absoluteAdapterPosition != selectedPosition) {
+                        isDescendingSort = false
+                        notifyItemChanged(selectedPosition)
+                        selectedPosition = absoluteAdapterPosition
+                        notifyItemChanged(absoluteAdapterPosition)
+                    } else {
+                        isDescendingSort = !isDescendingSort
+                        notifyItemChanged(selectedPosition)
+                    }
+                    setSortItem(sort)
+                }
+            }
+            fun getStringBySort(sort: Int) = when (sort) {
+                 Constant.SORT_BY_TITLE -> R.string.title
+                 Constant.SORT_BY_ALBUM -> R.string.album
+                 Constant.SORT_BY_ARTIST -> R.string.artist
+                 Constant.SORT_BY_DURATION -> R.string.duration
+                 Constant.SORT_BY_DATE_ADDED -> R.string.date_added
+                 Constant.SORT_BY_DATE_MODIFIED -> R.string.date_modified
+                 Constant.SORT_BY_YEAR -> R.string.year
+                 Constant.SORT_BY_SONGS -> R.string.song_count
+                 else -> R.string.album_count
             }
         }
     }

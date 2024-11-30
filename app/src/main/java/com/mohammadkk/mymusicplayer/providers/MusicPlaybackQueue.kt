@@ -8,7 +8,7 @@ import android.provider.BaseColumns
 import android.provider.MediaStore.Audio.AudioColumns
 import androidx.core.database.sqlite.transaction
 import com.mohammadkk.mymusicplayer.models.Song
-import com.mohammadkk.mymusicplayer.utils.Libraries
+import com.mohammadkk.mymusicplayer.repo.mediastore.MediaStoreSongs
 
 class MusicPlaybackQueue(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, VERSION) {
     override fun onCreate(db: SQLiteDatabase) {
@@ -55,10 +55,11 @@ class MusicPlaybackQueue(context: Context) : SQLiteOpenHelper(context, DATABASE_
         get() = getQueue(PLAYING_QUEUE_TABLE_NAME)
 
     private fun getQueue(tableName: String): List<Song> {
+        val projection = MediaStoreSongs.BASE_SONG_PROJECTION
         val cursor = readableDatabase.query(
-            tableName, Libraries.BASE_PROJECTION, null, null, null, null, null
+            tableName, projection, null, null, null, null, null
         )
-        return Libraries.fetchAllSongs(cursor)
+        return MediaStoreSongs.intoSongs(cursor)
     }
     @Synchronized
     private fun saveQueue(tableName: String, queue: List<Song>) {

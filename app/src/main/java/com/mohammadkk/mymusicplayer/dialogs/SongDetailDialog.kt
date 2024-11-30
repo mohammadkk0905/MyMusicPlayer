@@ -7,16 +7,19 @@ import android.media.MediaMetadataRetriever
 import android.os.Bundle
 import android.text.Spanned
 import android.view.View
-import android.webkit.MimeTypeMap
+import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.os.BundleCompat
 import androidx.core.os.bundleOf
 import androidx.core.text.parseAsHtml
+import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.databinding.DialogSongDetailsBinding
+import com.mohammadkk.mymusicplayer.databinding.DialogRecyclerBinding
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDate
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Song
@@ -30,54 +33,53 @@ import kotlin.math.pow
 
 class SongDetailDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val binding = DialogSongDetailsBinding.inflate(layoutInflater)
+        val binding = DialogRecyclerBinding.inflate(layoutInflater)
+        binding.btnNegative.visibility = View.GONE
+        binding.btnPositive.setText(android.R.string.ok)
+        binding.btnPositive.setOnClickListener { dismiss() }
+        val dataset = ArrayList<Spanned>()
         val song = findSongFromArguments()
         if (song != null) {
             val songFile = File(song.data)
             if (songFile.exists()) {
-                binding.fileName.text = makeTextWithTitle(R.string.label_file_name, songFile.name)
-                binding.filePath.text = makeTextWithTitle(R.string.label_file_path, songFile.absolutePath)
-                binding.dateModified.text = makeTextWithTitle(
-                    R.string.date_modified, songFile.lastModified().toFormattedDate(false)
+                dataset.add(makeTextWithTitle(R.string.label_file_name, songFile.name))
+                dataset.add(makeTextWithTitle(R.string.label_file_path, songFile.absolutePath))
+                dataset.add(
+                    makeTextWithTitle(
+                        R.string.date_modified, songFile.lastModified().toFormattedDate(false)
+                    )
                 )
-                binding.fileSize.text = makeTextWithTitle(
-                    R.string.label_file_size, getFileSizeString(songFile.length())
+                dataset.add(
+                    makeTextWithTitle(
+                        R.string.label_file_size, getFileSizeString(songFile.length())
+                    )
                 )
-                binding.trackLength.text = makeTextWithTitle(
-                    R.string.duration, getDuration(song).toFormattedDuration(true)
+                dataset.add(
+                    makeTextWithTitle(
+                        R.string.duration, getDuration(song).toFormattedDuration(true)
+                    )
                 )
-                getFormat(song).let {
-                    if (it != null) {
-                        binding.fileFormat.text = makeTextWithTitle(R.string.label_file_format, it)
-                        binding.fileFormat.visibility = View.VISIBLE
-                    } else {
-                        binding.fileFormat.visibility = View.GONE
-                    }
-                }
+                dataset.add(makeTextWithTitle(R.string.label_file_format, getFormat(songFile)))
                 val bitrate = getBitrate(song)
                 if (bitrate != 0) {
-                    binding.bitrate.text = makeTextWithTitle(R.string.label_bitrate, "$bitrate kb/s")
-                    binding.bitrate.visibility = View.VISIBLE
-                } else {
-                    binding.bitrate.visibility = View.GONE
+                    dataset.add(makeTextWithTitle(R.string.label_bitrate, "$bitrate kb/s"))
                 }
                 val simpleRate = getSampleRate(song)
                 if (simpleRate != 0) {
-                    binding.samplingRate.text = makeTextWithTitle(R.string.label_sampling_rate, "$simpleRate Hz")
-                    binding.samplingRate.visibility = View.VISIBLE
-                } else {
-                    binding.samplingRate.visibility = View.GONE
+                    dataset.add(makeTextWithTitle(R.string.label_sampling_rate, "$simpleRate Hz"))
                 }
             } else {
-                binding.fileName.text = makeTextWithTitle(R.string.label_file_name, song.title)
-                binding.trackLength.text = makeTextWithTitle(
-                    R.string.duration, song.duration.toFormattedDuration(true)
+                dataset.add(makeTextWithTitle(R.string.label_file_name, song.title))
+                dataset.add(
+                    makeTextWithTitle(
+                        R.string.duration, song.duration.toFormattedDuration(true)
+                    )
                 )
             }
         }
+        binding.dialogRecycler.adapter = DetailsAdapter(dataset)
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.action_details)
-            .setPositiveButton(android.R.string.ok, null)
             .setView(binding.root)
             .create()
     }
@@ -85,35 +87,9 @@ class SongDetailDialog : DialogFragment() {
         val bundle = arguments ?: return null
         return BundleCompat.getParcelable(bundle, "song_extra", Song::class.java)
     }
-    private fun getFormat(song: Song): String? {
-        val audioHeader = runCatching { AudioFileIO.read(File(song.data)).audioHeader }.getOrNull()
-        return if (audioHeader != null) {
-            audioHeader.format
-        } else {
-            val extension = MimeTypeMap.getFileExtensionFromUrl(song.data)
-            val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-            when (mimeType.orEmpty()) {
-                "audio/mpeg",
-                "audio/mp3" -> "MPEG-1 audio"
-                "audio/mp4",
-                "audio/mp4a-latm",
-                "audio/mpeg4-generic" -> "MPEG-4 audio"
-                "audio/aac",
-                "audio/aacp",
-                "audio/3gpp",
-                "audio/3gpp2" -> "Advanced Audio Coding (AAC)"
-                "audio/ogg",
-                "application/ogg",
-                "application/x-ogg" -> "Ogg audio"
-                "audio/flac" -> "Free Lossless Audio Codec (FLAC)"
-                "audio/wav",
-                "audio/x-wav",
-                "audio/wave",
-                "audio/vnd.wave" -> "Microsoft WAVE"
-                "audio/x-matroska" -> "Matroska audio"
-                else -> null
-            }
-        }
+    private fun getFormat(sonFile: File): String {
+        val audioHeader = runCatching { AudioFileIO.read(sonFile).audioHeader }.getOrNull()
+        return if (audioHeader != null) audioHeader.format else sonFile.extension.uppercase()
     }
     private fun getDuration(song: Song): Long {
         if (song.duration <= 0) {
@@ -188,6 +164,33 @@ class SongDetailDialog : DialogFragment() {
         val digitGroups = (log10(size.toDouble()) / log10(1024.0)).toInt()
         val df = DecimalFormat("#,##0.##", DecimalFormatSymbols.getInstance(Locale.ENGLISH))
         return df.format(size / 1024.0.pow(digitGroups.toDouble())) + " " + units[digitGroups]
+    }
+    private class DetailsAdapter(private val dataset: List<Spanned>) : RecyclerView.Adapter<DetailsAdapter.ViewHolder>() {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            val mContent = parent.context
+            val spacing = mContent.resources.getDimensionPixelSize(R.dimen.spacing_medium)
+            return ViewHolder(TextView(mContent).apply {
+                id = android.R.id.title
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                setPadding(spacing, spacing, spacing, 0)
+                TextViewCompat.setTextAppearance(this, R.style.TextColorPrimaryAppearance)
+            })
+        }
+        override fun getItemCount(): Int {
+            return dataset.size
+        }
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            holder.bindItems(dataset[position])
+        }
+        class ViewHolder(itemView: TextView) : RecyclerView.ViewHolder(itemView) {
+            val textView = itemView
+
+            fun bindItems(text: Spanned) {
+                textView.text = text
+            }
+        }
     }
     companion object {
         fun show(song: Song, manager: FragmentManager) = SongDetailDialog().run {

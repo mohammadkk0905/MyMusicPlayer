@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.widget.ImageViewCompat
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.activities.base.MusicServiceActivity
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerBinding
 import com.mohammadkk.mymusicplayer.dialogs.PlaybackSpeedDialog
 import com.mohammadkk.mymusicplayer.dialogs.SongDetailDialog
@@ -33,7 +34,7 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
-class PlayerActivity : BaseActivity(), MusicProgressViewUpdate.Callback {
+class PlayerActivity : MusicServiceActivity(), MusicProgressViewUpdate.Callback {
     private lateinit var binding: ActivityPlayerBinding
     private lateinit var musicProgressViewUpdate: MusicProgressViewUpdate
 
@@ -217,17 +218,12 @@ class PlayerActivity : BaseActivity(), MusicProgressViewUpdate.Callback {
             binding.playbackPlayPause.setAnimatedVectorDrawable(R.drawable.anim_pause_to_play, true)
         }
     }
-    private fun isFadeAnim(): Boolean {
-        return intent?.getBooleanExtra("fade_anim", false) ?: false
-    }
     override fun onPause() {
         super.onPause()
         musicProgressViewUpdate.stop()
-        if (isFadeAnim()) {
-            overridePendingTransitionCompat(
-                true, android.R.anim.fade_in, android.R.anim.fade_out
-            )
-        }
+        overridePendingTransitionCompat(
+            true, 0, R.anim.activity_bottom_out
+        )
     }
     override fun onDestroy() {
         removeMusicServiceEventListener(musicServiceCallback)

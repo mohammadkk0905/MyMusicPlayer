@@ -9,7 +9,6 @@ import android.app.Service
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.media.MediaScannerConnection
 import android.os.Environment
 import android.os.IBinder
 import android.provider.MediaStore.Audio.AudioColumns
@@ -23,6 +22,7 @@ import com.mohammadkk.mymusicplayer.extensions.notificationManager
 import com.mohammadkk.mymusicplayer.extensions.toImmutableFlag
 import com.mohammadkk.mymusicplayer.extensions.toast
 import com.mohammadkk.mymusicplayer.utils.FileUtils
+import com.mohammadkk.mymusicplayer.utils.MediaStoreScanner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.Main
@@ -66,25 +66,23 @@ class ScannerService : Service() {
         return START_NOT_STICKY
     }
     @Synchronized
-    private fun listPaths(intent: Intent, onDone: (paths: Array<String?>) -> Unit) {
+    private fun listPaths(intent: Intent, onDone: (paths: Array<String>?) -> Unit) {
         currentPath = intent.getStringExtra(AudioColumns.DATA) ?: Environment.getExternalStorageDirectory().absolutePath
         val file = File(currentPath)
         serviceScope.launch(Dispatchers.IO) {
             val mPaths = try {
-                val paths: Array<String?>
                 if (file.isDirectory) {
                     val files = FileUtils.listFilesDeep(file, FileUtils.AUDIO_FILE_FILTER)
-                    paths = arrayOfNulls(files.size)
-                    for (i in files.indices) {
-                        paths[i] = FileUtils.safeGetCanonicalPath(files[i])
+                    if (files.isNotEmpty()) {
+                        Array(files.size) { i -> FileUtils.safeGetCanonicalPath(files[i]) }
+                    } else {
+                        null
                     }
                 } else {
-                    paths = arrayOfNulls(1)
-                    paths[0] = file.path
+                    arrayOf(FileUtils.safeGetCanonicalPath(file))
                 }
-                paths
             } catch (e: Exception) {
-                arrayOf()
+                null
             }
             withContext(Main) { onDone(mPaths) }
         }
@@ -133,42 +131,38 @@ class ScannerService : Service() {
     private fun cancelNotification() {
         mNotificationManager?.cancel(SCANNER_NOTIFICATION_ID)
     }
-    private fun scanPaths(toBeScanned: Array<String?>) {
-        if (toBeScanned.isEmpty()) {
+    private fun scanPaths(toBeScanned: Array<String>?) {
+        if (toBeScanned.isNullOrEmpty()) {
             toast(R.string.nothing_to_scan)
             stopForegroundOrNotification()
             stopSelf()
             isForegroundService = false
         } else {
-            var cnt = toBeScanned.size
-            MediaScannerConnection.scanFile(applicationContext, toBeScanned, null) { _, _ ->
-                if (--cnt == 0) {
-                    toast(getString(R.string.scann_message, toBeScanned.size))
-                    PlaybackStateManager.getInstance().onReloadLibraries()
-                    stopForegroundOrNotification()
-                    stopSelf()
-                    isForegroundService = false
-                }
+            val mediaScannerConnection = MediaStoreScanner(applicationContext) {
+                PlaybackStateManager.getInstance().onReloadLibraries()
+                stopForegroundOrNotification()
+                stopSelf()
+                isForegroundService = false
             }
+            mediaScannerConnection.scan(toBeScanned)
         }
     }
     private fun startForegroundWithNotify() {
-        createMediaScanNotification(currentPath).let {
-            if (!isForegroundService) {
-                if (Constant.isSPlus()) {
-                    isForegroundService = try {
-                        startForeground(SCANNER_NOTIFICATION_ID, it)
-                        true
-                    } catch (ex: ForegroundServiceStartNotAllowedException) {
-                        false
-                    }
-                } else {
-                    startForeground(SCANNER_NOTIFICATION_ID, it)
-                    isForegroundService = true
+        val target = createMediaScanNotification(currentPath)
+        if (!isForegroundService) {
+            if (Constant.isSPlus()) {
+                isForegroundService = try {
+                    startForeground(SCANNER_NOTIFICATION_ID, target)
+                    true
+                } catch (ex: ForegroundServiceStartNotAllowedException) {
+                    false
                 }
             } else {
-                notifyNotification(it)
+                startForeground(SCANNER_NOTIFICATION_ID, target)
+                isForegroundService = true
             }
+        } else {
+            notifyNotification(target)
         }
     }
     private fun stopForegroundOrNotification() {

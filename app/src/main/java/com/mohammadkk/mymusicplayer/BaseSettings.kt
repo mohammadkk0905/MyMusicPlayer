@@ -2,11 +2,9 @@ package com.mohammadkk.mymusicplayer
 
 import android.app.Application
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
-import android.provider.MediaStore
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.mohammadkk.mymusicplayer.utils.PlaybackRepeat
-import kotlin.math.abs
 
 class BaseSettings(val app: Application) {
     private val prefs = PreferenceManager.getDefaultSharedPreferences(app.applicationContext)
@@ -16,32 +14,6 @@ class BaseSettings(val app: Application) {
     var songsSorting: Int
         get() = prefs.getInt("songs_sorting", Constant.SORT_BY_TITLE)
         set(value) = prefs.edit { putInt("songs_sorting", value) }
-
-    val songsSortingAtName: String
-        get() {
-            val currSort = prefs.getInt("songs_sorting", Constant.SORT_BY_TITLE)
-            return when (abs(currSort)) {
-                Constant.SORT_BY_TITLE -> {
-                    val name = MediaStore.Audio.Media.TITLE
-                    if (currSort > 0) name else "$name DESC"
-                }
-                Constant.SORT_BY_ALBUM -> MediaStore.Audio.Albums.DEFAULT_SORT_ORDER
-                Constant.SORT_BY_ARTIST -> MediaStore.Audio.Artists.DEFAULT_SORT_ORDER
-                Constant.SORT_BY_DURATION -> {
-                    val name = MediaStore.Audio.Media.DURATION
-                    if (currSort < 0) name else "$name DESC"
-                }
-                Constant.SORT_BY_DATE_ADDED -> {
-                    val name = MediaStore.Audio.Media.DATE_ADDED
-                    if (currSort < 0) name else "$name DESC"
-                }
-                Constant.SORT_BY_DATE_MODIFIED -> {
-                    val name = MediaStore.Audio.Media.DATE_MODIFIED
-                    if (currSort < 0) name else "$name DESC"
-                }
-                else -> MediaStore.Audio.Media.DEFAULT_SORT_ORDER
-            }
-        }
 
     var albumsSorting: Int
         get() = prefs.getInt("albums_sorting", Constant.SORT_BY_TITLE)

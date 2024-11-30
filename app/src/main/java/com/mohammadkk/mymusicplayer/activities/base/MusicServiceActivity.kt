@@ -1,6 +1,5 @@
-package com.mohammadkk.mymusicplayer.activities
+package com.mohammadkk.mymusicplayer.activities.base
 
-import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -11,14 +10,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore
-import android.view.ActionMode
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
@@ -30,28 +26,24 @@ import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.services.MusicService
 import com.mohammadkk.mymusicplayer.utils.FileUtils
-import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.lang.ref.WeakReference
 
-abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
-    protected val settings: BaseSettings get() = BaseSettings.getInstance()
+abstract class MusicServiceActivity : BaseActivity(), IMusicServiceEventListener {
     private val mMusicServiceEventListeners = ArrayList<IMusicServiceEventListener>()
     private var mLaunchActivity: ActivityResultLauncher<IntentSenderRequest>? = null
-    internal var adapterActionMode: ActionMode? = null
+    internal var actionModeBackPressed: Runnable? = null
     private var serviceToken: AudioPlayerRemote.ServiceToken? = null
     private var musicStateReceiver: MusicStateReceiver? = null
     private var receiverRegistered: Boolean = false
-    internal var isFadeAnimation = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        ThemeManager.build(this)
         mLaunchActivity = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-            if (it.resultCode == Activity.RESULT_OK) {
+            if (it.resultCode == RESULT_OK) {
                 deleteSongsFromQueues()
                 mAfterSdk30Action?.invoke(true)
             } else {
@@ -61,10 +53,11 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
         }
         serviceToken = AudioPlayerRemote.bindToService(this, object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                this@BaseActivity.onServiceConnected()
+                this@MusicServiceActivity.onServiceConnected()
             }
+
             override fun onServiceDisconnected(name: ComponentName?) {
-                this@BaseActivity.onServiceDisconnected()
+                this@MusicServiceActivity.onServiceDisconnected()
             }
         })
     }
@@ -87,15 +80,15 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
             callback(false)
         }
     }
-    fun deleteSongs(songs: List<Song>, callback: () -> Unit) {
+    fun deleteSongs(songs: List<Song>) {
         if (songs.isNotEmpty()) {
             if (songs.first().isOTGMode()) {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val files = songs.map { File(it.data) }
                     if (Constant.isRPlus()) {
-                        val resolved = FileUtils.matchFilesWithMediaStore(this@BaseActivity, files)
+                        val resolved = FileUtils.matchFilesWithMediaStore(this@MusicServiceActivity, files)
                         val uris = resolved.map { it.toContentUri() }
-                        deleteSDK30Uris(uris) { s -> if (s) callback() }
+                        deleteSDK30Uris(uris) { s -> if (s) onReloadLibrary(null) }
                     } else {
                         var result = false
                         for (file in files) {
@@ -107,7 +100,7 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
                         }
                         if (result) withContext(Dispatchers.Main) {
                             deleteSongsFromQueues()
-                            callback()
+                            onReloadLibrary(null)
                         }
                     }
                 }
@@ -117,7 +110,7 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
                 val uris = songs.map { it.toContentUri() }
                 deleteSDK30Uris(uris) { success ->
                     if (success) {
-                        callback()
+                        onReloadLibrary(null)
                     } else {
                         DeleteSongsDialog.destroyDataset()
                         toast(R.string.unknown_error_occurred)
@@ -137,7 +130,7 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
                     }
                     withContext(Dispatchers.Main) {
                         deleteSongsFromQueues()
-                        callback()
+                        onReloadLibrary(null)
                     }
                 }
             }
@@ -168,7 +161,12 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
                 addAction(MusicService.QUEUE_CHANGED)
                 addAction(MusicService.MEDIA_STORE_CHANGED)
             }
-            ContextCompat.registerReceiver(this, musicStateReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
+            ContextCompat.registerReceiver(
+                this,
+                musicStateReceiver,
+                filter,
+                ContextCompat.RECEIVER_EXPORTED
+            )
             receiverRegistered = true
         }
         for (listener in mMusicServiceEventListeners) {
@@ -222,8 +220,8 @@ abstract class BaseActivity : AppCompatActivity(), IMusicServiceEventListener {
             receiverRegistered = false
         }
     }
-    private class MusicStateReceiver(activity: BaseActivity) : BroadcastReceiver() {
-        private val reference: WeakReference<BaseActivity> = WeakReference(activity)
+    private class MusicStateReceiver(activity: MusicServiceActivity) : BroadcastReceiver() {
+        private val reference: WeakReference<MusicServiceActivity> = WeakReference(activity)
 
         override fun onReceive(context: Context?, intent: Intent?) {
             val action = intent?.action

@@ -21,20 +21,15 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.bumptech.glide.util.Util.isOnMainThread
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.providers.MusicPlaybackQueue
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 val Context.notificationManager: NotificationManager get() = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 val Context.isLandscape: Boolean get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -55,16 +50,6 @@ fun Activity.hasNotificationApi(): Boolean {
         }
     }
     return true
-}
-fun <T> Fragment.collectImmediately(stateFlow: StateFlow<T>, block: (T) -> Unit) {
-    block(stateFlow.value)
-    launch { stateFlow.collect(block) }
-}
-private fun Fragment.launch(
-    state: Lifecycle.State = Lifecycle.State.STARTED,
-    block: suspend CoroutineScope.() -> Unit
-) {
-    viewLifecycleOwner.lifecycleScope.launch { viewLifecycleOwner.repeatOnLifecycle(state, block) }
 }
 fun Context.getColorCompat(@ColorRes id: Int): Int {
     return ResourcesCompat.getColor(resources, id, theme)
@@ -108,6 +93,15 @@ fun Context.isMassUsbDeviceConnected(): Boolean {
     }
     return false
 }
+fun Activity.launchPlayerList(mode: String, id: Long) {
+    val intentList = Intent(this, PlayerListActivity::class.java).putExtra(
+        Constant.LIST_CHILD, Constant.pairStateToJson(Pair(mode, id))
+    )
+    val options = ActivityOptionsCompat.makeCustomAnimation(
+        this, android.R.anim.fade_in, android.R.anim.fade_out
+    ).toBundle()
+    startActivity(intentList, options)
+}
 fun Activity.shareSongsIntent(songs: List<Song>) {
     if (songs.size == 1) {
         shareSongIntent(songs.first())
@@ -121,7 +115,7 @@ fun Activity.shareSongsIntent(songs: List<Song>) {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 putParcelableArrayListExtra(Intent.EXTRA_STREAM, uriPaths)
                 try {
-                    startActivity(Intent.createChooser(this, getString(R.string.share)))
+                    startActivity(Intent.createChooser(this, getString(R.string.action_share)))
                 } catch (e: ActivityNotFoundException) {
                     toast(R.string.no_app_found)
                 } catch (e: RuntimeException) {
@@ -147,7 +141,7 @@ fun Activity.shareSongIntent(song: Song) {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             grantUriPermission("android", newUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
             try {
-                startActivity(Intent.createChooser(this, getString(R.string.share)))
+                startActivity(Intent.createChooser(this, getString(R.string.action_share)))
             } catch (e: ActivityNotFoundException) {
                 toast(R.string.no_app_found)
             } catch (e: RuntimeException) {

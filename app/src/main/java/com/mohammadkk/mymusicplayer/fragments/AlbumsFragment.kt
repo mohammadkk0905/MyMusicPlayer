@@ -1,39 +1,34 @@
 package com.mohammadkk.mymusicplayer.fragments
 
-import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
 import com.mohammadkk.mymusicplayer.adapters.AbsMultiAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemGridBinding
-import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
-import com.mohammadkk.mymusicplayer.extensions.collectImmediately
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
-import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
+import com.mohammadkk.mymusicplayer.extensions.launchPlayerList
+import com.mohammadkk.mymusicplayer.extensions.makeSectionName
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.extensions.toLocaleYear
 import com.mohammadkk.mymusicplayer.models.Album
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScroller
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollerBuilder
-import com.mohammadkk.mymusicplayer.utils.Libraries
-import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
@@ -46,14 +41,13 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentLibrariesBinding.bind(view)
         binding.listRv.apply {
-            albumsAdapter = AlbumsAdapter(requireActivity(), mutableListOf())
+            albumsAdapter = AlbumsAdapter(requireActivity())
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = albumsAdapter
             FastScrollerBuilder(binding.listRv).setPadding(Rect()).build()
         }
-        collectImmediately(musicViewModel.albumsList, ::updateList)
-        collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
+        observeData()
         binding.fragRefresher.setOnRefreshListener {
             binding.fragRefresher.postDelayed({
                 musicViewModel.updateLibraries()
@@ -65,6 +59,18 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
         return resources.getInteger(
             if (requireContext().isLandscape) R.integer.def_grid_columns_land else R.integer.def_grid_columns
         )
+    }
+    private fun observeData() {
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.albumsList.collect(::updateList)
+            }
+        }
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.searchHandle.collect(::handleSearchAdapter)
+            }
+        }
     }
     private fun updateList(albums: List<Album>) {
         unchangedList = albums
@@ -106,37 +112,20 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
         }
     }
     private class AlbumsAdapter(
-        context: FragmentActivity,
-        var dataSet: MutableList<Album>
+        context: FragmentActivity
     ) : AbsMultiAdapter<AlbumsAdapter.ViewHolder, Album>(context), FastScroller.PopupTextProvider {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
             return ViewHolder(ItemGridBinding.inflate(inflater, parent, false))
         }
-        override fun onMultiplePrepareActionMode(menu: Menu): Boolean {
-            baseSettings.actionModeIndex = 1
-            return true
-        }
-        override fun onMultipleItemAction(menuItem: MenuItem, selection: List<Album>) {
-            val selectedItems = selection.flatMap { it.songs }
-            when (menuItem.itemId) {
-                R.id.action_share -> context.shareSongsIntent(selectedItems)
-                R.id.action_remove_files -> DeleteSongsDialog.create(
-                    selectedItems, context.supportFragmentManager
-                )
-            }
-        }
         override fun getIdentifier(position: Int): Album? {
-            return dataSet.getOrNull(position)
-        }
-        override fun getItemCount(): Int {
-            return dataSet.size
+            return dataset.getOrNull(position)
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bindItems(dataSet[holder.absoluteAdapterPosition])
+            holder.bindItems(dataset[holder.absoluteAdapterPosition])
         }
         override fun getPopupText(view: View, position: Int): CharSequence {
-            val album = dataSet.getOrNull(position)
+            val album = dataset.getOrNull(position)
             val result = when (abs(baseSettings.albumsSorting)) {
                 Constant.SORT_BY_TITLE -> album?.title
                 Constant.SORT_BY_ARTIST -> album?.artist
@@ -144,48 +133,42 @@ class AlbumsFragment : Fragment(R.layout.fragment_libraries) {
                 Constant.SORT_BY_DURATION -> return album?.duration?.toFormattedDuration(true) ?: "-"
                 else -> album?.title
             }
-            return Libraries.getSectionName(result, true)
+            return result.makeSectionName()
         }
         fun swapDataSet(dataSet: List<Album>) {
-            this.dataSet = ArrayList(dataSet)
-            notifyDataSetChanged()
-        }
-        private fun startTracks(album: Album) {
-            Intent(context, PlayerListActivity::class.java).apply {
-                val json = Constant.pairStateToJson(Pair(Constant.ALBUM_TAB, album.id))
-                putExtra(Constant.LIST_CHILD, json)
-                val options = ActivityOptionsCompat.makeCustomAnimation(
-                    context, android.R.anim.fade_in, android.R.anim.fade_out
-                ).toBundle()
-                context.startActivity(this, options)
-            }
+            this.dataset = dataSet.toMutableList()
         }
         inner class ViewHolder(private val binding: ItemGridBinding) : RecyclerView.ViewHolder(binding.root) {
             fun bindItems(album: Album) = with(binding) {
-                if (checked.contains(album)) {
+                menu.visibility = View.GONE
+                if (selectionController.isFirstSelected) {
                     checkbox.visibility = View.VISIBLE
-                    root.setCardBackgroundColor(ThemeManager.colorPrimaryAlpha)
                 } else {
-                    checkbox.visibility = View.INVISIBLE
-                    root.setCardBackgroundColor(Color.TRANSPARENT)
+                    checkbox.visibility = View.GONE
                 }
-                title.text = album.title
+                if (selectionController.isSelected(album)) {
+                    root.isActivated = true
+                    checkbox.isChecked = true
+                } else {
+                    root.isActivated = false
+                    checkbox.isChecked = false
+                }
+                tvTitle.text = album.title
                 text.text = context.resources.getQuantityString(
                     R.plurals.songs_plural, album.trackCount, album.trackCount
                 )
                 image.bind(album.getSafeSong(), R.drawable.ic_album)
                 root.setOnClickListener {
-                    if (isInQuickSelectMode) {
-                        toggleChecked(absoluteAdapterPosition)
+                    if (selectionController.isInQuickSelectMode) {
+                        selectionController.toggle(absoluteAdapterPosition)
                     } else {
                         if (!Constant.isBlockingClick()) {
-                            startTracks(album)
+                            context.launchPlayerList(Constant.ALBUM_TAB, album.id)
                         }
                     }
                 }
                 root.setOnLongClickListener {
-                    toggleChecked(absoluteAdapterPosition)
-                    true
+                    selectionController.toggle(absoluteAdapterPosition)
                 }
             }
         }

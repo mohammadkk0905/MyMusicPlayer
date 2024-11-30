@@ -10,7 +10,10 @@ import androidx.lifecycle.viewModelScope
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.models.Song
-import com.mohammadkk.mymusicplayer.utils.Libraries
+import com.mohammadkk.mymusicplayer.repo.mediastore.MediaStoreAlbums
+import com.mohammadkk.mymusicplayer.repo.mediastore.MediaStoreArtists
+import com.mohammadkk.mymusicplayer.repo.mediastore.MediaStoreGenres
+import com.mohammadkk.mymusicplayer.repo.mediastore.MediaStoreSongs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,17 +29,33 @@ class SubViewModel(application: Application) : AndroidViewModel(application) {
     fun getDuration() = durations
 
     fun updateList(modePair: Pair<String, Long>) = viewModelScope.launch(Dispatchers.IO) {
-        val songs = Libraries.getSortedSongs(
-            when (modePair.first) {
-                Constant.ALBUM_TAB -> Libraries.fetchSongsByAlbumId(context, modePair.second)
-                Constant.ARTIST_TAB  -> Libraries.fetchSongsByArtistId(context, modePair.second)
-                Constant.GENRE_TAB -> Libraries.fetchSongsByGenreId(context, modePair.second)
-                else -> Libraries.fetchSongsByOtg()
+        val songs = when (modePair.first) {
+            Constant.ALBUM_TAB -> {
+                val album = MediaStoreAlbums.id(context, modePair.second)
+                currentSong = album.getSafeSong()
+                durations = album.duration
+                MediaStoreSongs.album(context, modePair.second)
             }
-        )
-        currentSong = songs.getOrElse(0) { Song.emptySong }
-        if (modePair.first == "OTG") initOtgMetadata()
-        durations = if (modePair.first != "OTG") songs.sumOf { it.duration } else currentSong.duration
+            Constant.ARTIST_TAB -> {
+                val artist = MediaStoreArtists.id(context, modePair.second)
+                currentSong = artist.getSafeSong()
+                durations = artist.duration
+                MediaStoreSongs.artist(context, modePair.second)
+            }
+            Constant.GENRE_TAB -> {
+                val genre = MediaStoreGenres.id(context, modePair.second)
+                currentSong = genre.currentSong
+                durations = genre.songs.sumOf { it.duration }
+                MediaStoreGenres.songs(context, modePair.second)
+            }
+            else -> {
+                val items = MediaStoreSongs.otg()
+                currentSong = items.getOrElse(0) { Song.emptySong }
+                initOtgMetadata()
+                durations = currentSong.duration
+                items
+            }
+        }
         withContext(Dispatchers.Main) { liveData.value = songs }
     }
     private fun initOtgMetadata() {

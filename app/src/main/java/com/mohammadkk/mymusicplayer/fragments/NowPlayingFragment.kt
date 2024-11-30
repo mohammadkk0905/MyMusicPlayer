@@ -1,7 +1,6 @@
 package com.mohammadkk.mymusicplayer.fragments
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.provider.MediaStore
@@ -11,14 +10,12 @@ import android.view.GestureDetector.OnGestureListener
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import androidx.core.app.ActivityOptionsCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.os.BundleCompat
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.PlayerActivity
+import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentNowPlayingBinding
 import com.mohammadkk.mymusicplayer.extensions.bind
-import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.setAnimatedVectorDrawable
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
@@ -46,7 +43,7 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
         view.setOnTouchListener(FlingPlayBackController())
         with(binding) {
             songProgress.setIndicatorColor(ThemeManager.colorPrimary)
-            songProgress.trackColor = ThemeManager.colorPrimaryAlpha
+            songProgress.trackColor = ThemeManager.withAlpha(ThemeManager.colorPrimary, 0.2f)
             root.setCardBackgroundColor(ColorStateList.valueOf(darkAccentColor()))
         }
         if (savedInstanceState != null) {
@@ -56,14 +53,7 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
         }
         binding.root.setOnClickListener {
             if (!isStopHandleClick) {
-                with(requireActivity()) {
-                    val mIntent = Intent(this, PlayerActivity::class.java)
-                    mIntent.putExtra("fade_anim", true)
-                    val options = ActivityOptionsCompat.makeCustomAnimation(
-                        this, android.R.anim.fade_in, android.R.anim.fade_out
-                    ).toBundle()
-                    startActivity(mIntent, options)
-                }
+                SongsAdapter.launchPlayer(requireActivity())
             }
         }
         binding.btnPlayPause.setOnClickListener {
@@ -75,7 +65,7 @@ class NowPlayingFragment : ABaseFragment(R.layout.fragment_now_playing), MusicPr
         }
     }
     private fun darkAccentColor(): Int {
-        val surface = requireContext().getColorCompat(R.color.main_bg)
+        val surface = ThemeManager.colorSurface
         return ColorUtils.blendARGB(
             ThemeManager.colorPrimary, surface,
             if (ThemeManager.isColorLight(surface)) 0.9f else 0.92f

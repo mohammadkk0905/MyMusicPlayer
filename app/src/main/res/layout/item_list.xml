@@ -1,65 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="70dp"
+    android:layout_height="wrap_content"
     android:layout_marginStart="@dimen/spacing_small"
     android:layout_marginTop="@dimen/spacing_small"
-    android:background="@drawable/rect_round_selector">
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/image"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="10dp"
-        android:background="?attr/colorSurfaceContainer"
-        android:scaleType="centerCrop"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.MediumComponent"
-        tools:srcCompat="@tools:sample/backgrounds/scenic" />
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/tv_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:lineSpacingExtra="0dp"
-        android:maxLines="1"
-        android:paddingHorizontal="@dimen/spacing_small"
-        android:textAlignment="viewStart"
-        android:textAppearance="@style/TextAppearance.Audio.TitleMedium"
-        android:textColor="@color/sel_selectable_text_primary"
-        app:layout_constraintBottom_toTopOf="@+id/tv_text"
-        app:layout_constraintEnd_toStartOf="@+id/menu"
-        app:layout_constraintStart_toEndOf="@+id/image"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"
-        tools:text="@tools:sample/full_names" />
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/tv_text"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:lineSpacingExtra="0dp"
-        android:maxLines="1"
-        android:paddingHorizontal="10dp"
-        tools:text="@tools:sample/full_names"
-        android:textAlignment="viewStart"
-        android:textAppearance="@style/TextAppearance.Audio.BodyMedium"
-        android:textColor="?android:attr/textColorPrimary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/menu"
-        app:layout_constraintStart_toEndOf="@+id/image"
-        app:layout_constraintTop_toBottomOf="@+id/tv_title" />
-    <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/menu"
-        style="@style/BtnOverflowStyle"
-        android:layout_marginEnd="@dimen/spacing_tiny"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+    android:foreground="@drawable/rect_round_selector">
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="70dp">
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/image_container"
+            style="@style/CornerCardView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/image"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="?attr/colorSurfaceContainer"
+                android:scaleType="centerCrop"
+                tools:srcCompat="@tools:sample/backgrounds/scenic" />
+            <FrameLayout
+                android:id="@+id/fl_visualizer"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_gravity="center"
+                android:background="@color/black_translucent_66"
+                android:visibility="gone">
+                <com.mohammadkk.mymusicplayer.ui.MusicMiniVisualizer
+                    android:id="@+id/visualizer"
+                    android:layout_width="21dp"
+                    android:layout_height="25dp"
+                    android:layout_gravity="center" />
+            </FrameLayout>
+        </com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tv_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:singleLine="true"
+            android:textAlignment="viewStart"
+            android:textAppearance="@style/TextColorPrimaryMediumAppearance"
+            android:textColor="@color/sel_selectable_text_primary"
+            app:layout_constraintBottom_toTopOf="@+id/tv_text"
+            app:layout_constraintEnd_toStartOf="@+id/fl_menu"
+            app:layout_constraintStart_toEndOf="@+id/image_container"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="@tools:sample/full_names" />
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/tv_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="1dp"
+            android:singleLine="true"
+            android:textAlignment="viewStart"
+            android:textAppearance="@style/TextColorSecondaryAppearance"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/fl_menu"
+            app:layout_constraintStart_toEndOf="@+id/image_container"
+            app:layout_constraintTop_toBottomOf="@+id/tv_title"
+            tools:text="@tools:sample/full_names" />
+        <FrameLayout
+            android:id="@+id/fl_menu"
+            android:layout_width="@dimen/size_btn"
+            android:layout_height="@dimen/size_btn"
+            android:layout_gravity="center_vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/menu"
+                style="@style/MoreMenuButton" />
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox"
+                style="@style/MultiselectCheckboxStyle" />
+        </FrameLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

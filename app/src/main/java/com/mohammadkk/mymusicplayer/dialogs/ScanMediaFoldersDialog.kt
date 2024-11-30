@@ -18,7 +18,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.BaseActivity
 import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
 import com.mohammadkk.mymusicplayer.databinding.DialogRecyclerBinding
 import com.mohammadkk.mymusicplayer.extensions.errorToast
@@ -60,52 +59,43 @@ class ScanMediaFoldersDialog : DialogFragment() {
         parentContent = if (!isRootStorage) listFiles() else getListStorages()
         rootAdapter = ScanAdapter(getContentsArray())
         val binding = DialogRecyclerBinding.inflate(layoutInflater)
-        binding.dialogRecycler.adapter = rootAdapter
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(if (!isRootStorage) parentFolder?.absolutePath else "RootStorage")
-            .setCancelable(false)
-            .setView(binding.root)
-
-        if (!isOtgDialog) {
-            builder.setPositiveButton(R.string.directory_scan) { _, _ ->
+        val recyclerView = binding.dialogRecycler
+        recyclerView.adapter = rootAdapter
+        if (isOtgDialog) {
+            binding.btnPositive.visibility = View.GONE
+            binding.btnPositive.setOnClickListener(null)
+        } else {
+            binding.btnPositive.setOnClickListener {
+                dismiss()
                 val absolutePath = parentFolder?.absolutePath
-                (activity as? BaseActivity)?.run {
-                    if (hasNotificationApi() && absolutePath != null) {
-                        val serviceIntent = Intent(this, ScannerService::class.java)
-                        serviceIntent.putExtra(AudioColumns.DATA, absolutePath)
-                        try {
-                            startService(serviceIntent)
-                        } catch (e: Exception) {
-                            errorToast(e)
-                        }
+                val baseActivity = activity ?: return@setOnClickListener
+                if (baseActivity.hasNotificationApi() && absolutePath != null) {
+                    val sIntent = Intent(baseActivity, ScannerService::class.java).putExtra(
+                        AudioColumns.DATA, absolutePath
+                    )
+                    try {
+                        baseActivity.startService(sIntent)
+                    } catch (e: Exception) {
+                        baseActivity.errorToast(e)
                     }
                 }
             }
         }
-        return builder.setNegativeButton(android.R.string.cancel) { _, _ ->
-            dismiss()
-        }.create()
+        binding.btnNegative.setOnClickListener { dismiss() }
+        return MaterialAlertDialogBuilder(requireContext())
+            .setTitle(if (!isRootStorage) parentFolder?.absolutePath else "RootStorage")
+            .setCancelable(false).setView(binding.root).create()
     }
     private fun selectionDirectory(i: Int) {
         if (canGoUp && i == 0) {
             if (parentFolder?.absolutePath == initialPath) {
-                canGoUp = false
-                isRootStorage = true
-                parentContent = getListStorages()
-                val baseDialog = dialog as AlertDialog
-                baseDialog.setTitle("Root Storage")
-                rootAdapter?.reload()
+                rootHandler()
                 return
             }
             parentFolder = parentFolder?.parentFile
             val countSlash = parentFolder?.absolutePath?.count { it == '/' } ?: 0
             if (countSlash <= 1) {
-                canGoUp = false
-                isRootStorage = true
-                parentContent = getListStorages()
-                val baseDialog = dialog as AlertDialog
-                baseDialog.setTitle("Root Storage")
-                rootAdapter?.reload()
+                rootHandler()
                 return
             }
         } else {
@@ -114,6 +104,13 @@ class ScanMediaFoldersDialog : DialogFragment() {
             canGoUp = true
         }
         reloadDialog()
+    }
+    private fun rootHandler() {
+        canGoUp = false
+        isRootStorage = true
+        parentContent = getListStorages()
+        (dialog as AlertDialog).setTitle("Root Storage")
+        rootAdapter?.reload()
     }
     private fun reloadDialog() {
         parentContent = listFiles()
@@ -141,16 +138,13 @@ class ScanMediaFoldersDialog : DialogFragment() {
         return null
     }
     private fun getListStorages(): List<File> {
-        val distance = HashSet<String>()
         val result = ArrayList<File>()
-        FileUtils.listRoots().forEach { f ->
-            if (distance.add(f.second.absolutePath)) {
-                if (!isOtgDialog) {
+        for (f in FileUtils.listRoots()) {
+            if (!isOtgDialog) {
+                result.add(f.second)
+            } else {
+                if (f.first.contains("External")) {
                     result.add(f.second)
-                } else {
-                    if (f.first.contains("External")) {
-                        result.add(f.second)
-                    }
                 }
             }
         }
@@ -168,19 +162,7 @@ class ScanMediaFoldersDialog : DialogFragment() {
             return ViewHolder(inflater.inflate(R.layout.list_scan_dialog, parent, false))
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val fileItem = items[position]
-            holder.title.text = fileItem.first
-            holder.itemView.setOnClickListener {
-                if (!isOtgDialog) {
-                    selectionDirectory(position)
-                } else with(requireActivity()) {
-                    dismiss()
-                    BaseSettings.getInstance().otgPartition = fileItem.second
-                    val intent = Intent(this, PlayerListActivity::class.java)
-                    intent.putExtra("otg", true)
-                    startActivity(intent)
-                }
-            }
+            holder.bindItems(items[position], position)
         }
         fun reload() {
             items = getContentsArray()
@@ -191,6 +173,21 @@ class ScanMediaFoldersDialog : DialogFragment() {
         }
         private inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val title: TextView = itemView.findViewById(R.id.title)
+
+            fun bindItems(items: Pair<String, String>, position: Int) {
+                title.text = items.first
+                itemView.setOnClickListener {
+                    if (!isOtgDialog) {
+                        selectionDirectory(position)
+                    } else with(requireActivity()) {
+                        dismiss()
+                        BaseSettings.getInstance().otgPartition = items.second
+                        val intent = Intent(this, PlayerListActivity::class.java)
+                        intent.putExtra("otg", true)
+                        startActivity(intent)
+                    }
+                }
+            }
         }
     }
     companion object {

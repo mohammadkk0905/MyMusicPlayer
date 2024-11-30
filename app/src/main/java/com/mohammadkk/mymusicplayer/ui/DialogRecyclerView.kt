@@ -9,25 +9,35 @@ import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDivider
+import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 
 class DialogRecyclerView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null,
     @AttrRes defStyleAttr: Int = 0
 ) : RecyclerView(context, attrs, defStyleAttr) {
-    private val topDivider = MaterialDivider(context)
-    private val bottomDivider = MaterialDivider(context)
+    private val topDivider = createDivider(context)
+    private val bottomDivider = createDivider(context)
     private val spacingMedium = context.resources.getDimensionPixelSize(R.dimen.spacing_mid_medium)
 
     init {
         updatePadding(top = spacingMedium)
-        overScrollMode = OVER_SCROLL_NEVER
+        overScrollMode = if (Constant.isSPlus()) {
+            OVER_SCROLL_ALWAYS
+        } else {
+            OVER_SCROLL_NEVER
+        }
         overlay.apply {
             add(topDivider)
             add(bottomDivider)
         }
     }
-
+    private fun createDivider(context: Context): MaterialDivider {
+        val divider = MaterialDivider(context)
+        divider.dividerColor = context.getColorCompat(R.color.primary_divider)
+        return divider
+    }
     override fun onMeasure(widthSpec: Int, heightSpec: Int) {
         super.onMeasure(widthSpec, heightSpec)
         measureDivider(topDivider)

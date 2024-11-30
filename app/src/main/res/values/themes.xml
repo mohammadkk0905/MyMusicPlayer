@@ -3,22 +3,23 @@
         <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@android:color/transparent</item>
         <item name="android:windowSplashScreenAnimationDuration" tools:targetApi="s">0</item>
         <item name="popupMenuStyle">@style/Widget.Audio.PopupMenu</item>
-        <item name="actionModeStyle">@style/Widget.Audio.ActionMode</item>
         <item name="actionModeCloseDrawable">@drawable/ic_west</item>
         <item name="textAppearanceLargePopupMenu">@style/TextAppearance.Audio.BodyMedium</item>
         <item name="sliderStyle">@style/Widget.Audio.Slider</item>
         <item name="bottomSheetDragHandleStyle">@style/Widget.Audio.BottomSheet.Handle</item>
         <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Demo.BottomSheetDialog</item>
         <item name="materialAlertDialogTheme">@style/Theme.Audio.MaterialAlertDialog</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">@color/main_bg</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
     </style>
     <style name="Theme.MyAudioPlayer.LightBlue" parent="Theme.MyAudioPlayer">
         <item name="colorPrimary">@color/light_blue_primary</item>
-        <item name="colorPrimaryDark">@color/light_blue_primary_dark</item>
         <item name="colorPrimaryContainer">@color/light_blue_primary_container</item>
         <item name="colorSecondary">@color/light_blue_secondary</item>
+        <item name="colorOnSecondary">@color/light_blue_on_secondary</item>
         <item name="colorSecondaryContainer">@color/light_blue_secondary_container</item>
+        <item name="colorSurface">@color/light_blue_surface</item>
         <item name="colorSurfaceContainer">@color/light_blue_surface_container</item>
     </style>
 </resources>

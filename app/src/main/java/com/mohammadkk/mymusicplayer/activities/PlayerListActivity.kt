@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.ColorStateList
-import android.content.res.Configuration
 import android.graphics.Color
 import android.hardware.usb.UsbManager
 import android.os.Bundle
@@ -14,7 +13,6 @@ import android.os.Looper
 import android.provider.MediaStore.Audio.AudioColumns
 import android.util.AndroidRuntimeException
 import android.util.Log
-import android.util.TypedValue
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.OnBackPressedCallback
@@ -30,6 +28,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.activities.base.MusicServiceActivity
 import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.ActivityPlayerListBinding
 import com.mohammadkk.mymusicplayer.dialogs.ChangeSortingDialog
@@ -51,7 +50,7 @@ import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.SubViewModel
 import kotlin.math.abs
 
-class PlayerListActivity : BaseActivity() {
+class PlayerListActivity : MusicServiceActivity() {
     private lateinit var binding: ActivityPlayerListBinding
     private val subViewModel: SubViewModel by viewModels()
     private val mHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
@@ -92,8 +91,8 @@ class PlayerListActivity : BaseActivity() {
             }, 200)
         }
         binding.mainActionbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        binding.btnPlayerListDetails.setOnClickListener { songsAdapter?.startFirstPlayer() }
-        binding.btnShuffleListDetails.setOnClickListener { songsAdapter?.startShufflePlayer() }
+        binding.btnPlayerListDetails.setOnClickListener { songsAdapter?.startFirstPlayer(false) }
+        binding.btnShuffleListDetails.setOnClickListener { songsAdapter?.startFirstPlayer(true) }
     }
     private fun getInputMethod() {
         val metrics = resources.displayMetrics
@@ -169,9 +168,9 @@ class PlayerListActivity : BaseActivity() {
     }
     private val mBackPressedCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            if (adapterActionMode != null) {
-                adapterActionMode?.finish()
-                adapterActionMode = null
+            if (actionModeBackPressed != null) {
+                actionModeBackPressed?.run()
+                actionModeBackPressed = null
             } else {
                 finish()
             }
@@ -188,8 +187,7 @@ class PlayerListActivity : BaseActivity() {
         return mPairActivity
     }
     private fun initializeList(mode: String) {
-        val dataSet = songsAdapter?.dataSet ?: mutableListOf()
-        songsAdapter = SongsAdapter(this, dataSet, mode)
+        songsAdapter = SongsAdapter(this, mode)
         val spanCount = if (isLandscape) {
             resources.getInteger(R.integer.def_list_columns_land)
         } else {
@@ -201,7 +199,7 @@ class PlayerListActivity : BaseActivity() {
     }
     private fun initializeMenu(isOtg: Boolean) {
         if (!isOtg) {
-            binding.mainActionbar.menu?.add(0, R.id.action_order_by, 0, getString(R.string.order_by))?.run {
+            binding.mainActionbar.menu?.add(0, R.id.action_order_by, 0, getString(R.string.action_sort_order))?.run {
                 setIcon(R.drawable.ic_sort)
                 setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
                 setOnMenuItemClickListener {
@@ -211,8 +209,8 @@ class PlayerListActivity : BaseActivity() {
                 }
             }
         } else {
-            binding.mainActionbar.menu?.add(0, R.id.action_recheck_library, 0, getString(R.string.order_by))?.run {
-                setIcon(R.drawable.ic_scan_files)
+            binding.mainActionbar.menu?.add(0, R.id.action_recheck_library, 0, getString(R.string.action_sort_order))?.run {
+                setIcon(R.drawable.ic_scan)
                 setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS)
                 setOnMenuItemClickListener {
                     if (hasNotificationApi()) {
@@ -286,23 +284,12 @@ class PlayerListActivity : BaseActivity() {
         rippleColor = ColorStateList.valueOf(ThemeManager.withAlpha(color, 0.35f))
     }
     private fun getColorAlpha(@ColorInt color: Int): Int {
-        val uiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        if (uiMode == Configuration.UI_MODE_NIGHT_YES) {
+        if (ThemeManager.isNightTheme(resources)) {
             return ColorUtils.blendARGB(
                 color, Color.parseColor("#FCFCFC"), 0.52f
             )
         }
         return color
-    }
-    private fun getActionBarHeight(): Int {
-        val mHeight = if (theme != null) {
-            val tv = TypedValue()
-            theme.resolveAttribute(android.R.attr.actionBarSize, tv, true)
-            TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics)
-        } else {
-            resources.getDimensionPixelSize(androidx.appcompat.R.dimen.abc_action_bar_default_height_material)
-        }
-        return mHeight + resources.getDimensionPixelSize(R.dimen.spacing_small)
     }
     override fun onReloadLibrary(tabIndex: Int?) {
         getPairActivity()?.let { pair ->
@@ -319,9 +306,9 @@ class PlayerListActivity : BaseActivity() {
     override fun onShowOpenMiniPlayer(isShow: Boolean) {
         if (isShow) {
             if (binding.nowPlayerFrag.visibility != View.VISIBLE) {
+                val actionBar = binding.mainActionbar.layoutParams.height
                 binding.mainRelative.updatePadding(
-                    left = 0, top = 0, right = 0,
-                    bottom = getActionBarHeight()
+                    left = 0, top = 0, right = 0, bottom = actionBar
                 )
                 binding.nowPlayerFrag.visibility = View.VISIBLE
             }
@@ -336,10 +323,9 @@ class PlayerListActivity : BaseActivity() {
     }
     override fun onPause() {
         super.onPause()
-        if (isFadeAnimation)
-            overridePendingTransitionCompat(
-                true, android.R.anim.fade_in, android.R.anim.fade_out
-            )
+        overridePendingTransitionCompat(
+            true, android.R.anim.fade_in, android.R.anim.fade_out
+        )
     }
     override fun onDestroy() {
         unregisterUSBReceiver()

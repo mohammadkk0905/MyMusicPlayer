@@ -6,18 +6,19 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.data.DataFetcher
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.extensions.toAlbumArtURI
+import com.mohammadkk.mymusicplayer.models.Song
 import org.jaudiotagger.audio.AudioFileIO
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 
-class AudioFileCoverFetcher(private val model: AudioFileCover) : DataFetcher<InputStream> {
+class AudioFileCoverFetcher(private val model: Song) : DataFetcher<InputStream> {
     private var stream: InputStream? = null
 
     override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
         try {
-            stream = getStream(model.filePath) ?: getFallback()
+            stream = getStream(model.data) ?: getFallback()
             callback.onDataReady(stream)
         } catch (e: Exception) {
             callback.onLoadFailed(e)
@@ -31,7 +32,7 @@ class AudioFileCoverFetcher(private val model: AudioFileCover) : DataFetcher<Inp
         return cover?.let { ByteArrayInputStream(it) }
     }
     private fun getFallback(): InputStream? {
-        val audioIO = runCatching { AudioFileIO.read(File(model.filePath)).tag }.getOrNull()
+        val audioIO = runCatching { AudioFileIO.read(File(model.data)).tag }.getOrNull()
         val bytes = audioIO?.firstArtwork?.binaryData?.let { ByteArrayInputStream(it) }
         if (bytes == null && model.albumId != 0L) {
             val contentResolver = BaseSettings.getInstance().app.contentResolver

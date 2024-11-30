@@ -2,7 +2,7 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    style="@style/DefaultCardViewStyle"
+    style="@style/CornerCardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="@dimen/spacing_small"
@@ -60,9 +60,9 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:paddingTop="4dp"
+                android:paddingTop="@dimen/spacing_tiny"
                 android:textAlignment="viewStart"
-                android:textAppearance="@style/TextAppearance.Audio.BodySmall"
+                android:textAppearance="@style/TextColorSecondaryAppearance"
                 tools:text="@tools:sample/full_names" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

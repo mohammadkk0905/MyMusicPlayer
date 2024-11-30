@@ -5,28 +5,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-    
-    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
-        android:id="@+id/dragSheet"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-    
-    <TextView
-        android:id="@+id/tvSortName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="@dimen/spacing_small"
-        android:text="@string/order_by"
-        android:textAppearance="@style/TextAppearance.Audio.TitleMidLarge" />
-   
+        android:layout_height="wrap_content">
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:id="@+id/dragSheet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/menu_option_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:padding="20dp"
+            android:text="@string/action_sort_order"
+            android:textAppearance="@style/TextColorPrimaryMediumAppearance" />
+    </FrameLayout>
+    <View style="@style/DividerStyle" />
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvSortMode"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingTop="0dp"
-        android:paddingBottom="@dimen/spacing_small"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_sort_mode" />
 </LinearLayout>

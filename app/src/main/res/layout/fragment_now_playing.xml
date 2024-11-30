@@ -2,12 +2,11 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    style="@style/DefaultCardViewStyle"
+    style="@style/CornerCardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardCornerRadius="0dp"
-    app:rippleColor="?android:attr/colorControlHighlight"
-    app:strokeWidth="0dp">
+    app:rippleColor="?android:attr/colorControlHighlight">
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/contentPlayback"
         android:layout_width="match_parent"

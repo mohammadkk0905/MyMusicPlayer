@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:icon="@drawable/ic_play"
+        android:id="@+id/action_play"
+        android:title="@string/action_play"
+        app:showAsAction="always"/>
+    <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/ic_share"
+        android:title="@string/action_share"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_delete_from_device"
+        android:icon="@drawable/ic_trash"
+        android:title="@string/action_delete_from_device"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_select_all_adapter"
+        android:icon="@drawable/ic_select_all"
+        android:title="@string/select_all"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_invert_select_adapter"
+        android:title="@string/invert_selection"
+        app:showAsAction="never" />
+</menu>

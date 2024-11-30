@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/spacing_small"
         android:alpha="0.8"
-        android:contentDescription="@string/directory_scan"
+        android:contentDescription="@string/action_scan_directory"
         android:src="@drawable/ic_folder"
         app:tint="?attr/colorPrimary" />
     <TextView

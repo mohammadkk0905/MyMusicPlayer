@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.util.Util.isOnMainThread
@@ -27,6 +28,8 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.activities.base.MusicServiceActivity
+import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
 import com.mohammadkk.mymusicplayer.databinding.ActivityMainBinding
 import com.mohammadkk.mymusicplayer.dialogs.ChangeSortingDialog
 import com.mohammadkk.mymusicplayer.dialogs.ScanMediaFoldersDialog
@@ -41,11 +44,14 @@ import com.mohammadkk.mymusicplayer.fragments.ArtistsFragment
 import com.mohammadkk.mymusicplayer.fragments.GenresFragment
 import com.mohammadkk.mymusicplayer.fragments.SongsFragment
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
+import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
 
-class MainActivity : BaseActivity() {
+class MainActivity : MusicServiceActivity() {
     private lateinit var binding: ActivityMainBinding
     private val musicViewModel: MusicViewModel by viewModels()
     private var permissionMode = '0'
@@ -90,9 +96,9 @@ class MainActivity : BaseActivity() {
         }
     }
     private fun onBackPressedCompat() {
-        if (adapterActionMode != null) {
-            adapterActionMode?.finish()
-            adapterActionMode = null
+        if (actionModeBackPressed != null) {
+            actionModeBackPressed?.run()
+            actionModeBackPressed = null
         } else {
             if (binding.mainPager.currentItem >= 1) {
                 binding.mainPager.currentItem = 0
@@ -139,25 +145,30 @@ class MainActivity : BaseActivity() {
         binding.mainPager.orientation = ViewPager2.ORIENTATION_HORIZONTAL
         binding.mainPager.adapter = adapter
         binding.mainPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            private var oldPosition = -1
+
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 if (musicViewModel.searchHandle.value.first != -1) {
                     musicViewModel.setSearch(true, null)
                     invalidateOptionsMenu()
                 }
+                if (position == 0) {
+                    binding.fabShuffle.show()
+                    binding.fabShuffle.tag = "1"
+                } else {
+                    binding.fabShuffle.hide()
+                    binding.fabShuffle.tag = "0"
+                }
+                if (actionModeBackPressed != null) oldPosition = position
             }
-            override fun onPageScrolled(
-                position: Int,
-                positionOffset: Float,
-                positionOffsetPixels: Int
-            ) {
-                super.onPageScrolled(position, positionOffset, positionOffsetPixels)
-                val oldPosition = settings.actionModeIndex
-                if (positionOffset == 0f && oldPosition != -1) {
-                    if (adapterActionMode != null && oldPosition != position) {
-                        adapterActionMode?.finish()
-                        adapterActionMode = null
-                        settings.actionModeIndex = -1
+            override fun onPageScrollStateChanged(state: Int) {
+                super.onPageScrollStateChanged(state)
+                if (state == ViewPager2.SCROLL_STATE_IDLE) {
+                    if (actionModeBackPressed != null && oldPosition != -1) {
+                        actionModeBackPressed?.run()
+                        actionModeBackPressed = null
+                        oldPosition = -1
                     }
                 }
             }
@@ -175,10 +186,18 @@ class MainActivity : BaseActivity() {
                 customView?.findViewById<TextView>(R.id.tab_item_label)?.setText(mInfoTab[1])
             }
         }.attach()
-        val oldIndex = intent.getIntExtra("song_tab", -1)
-        if (oldIndex in 0..2) {
-            binding.mainPager.setCurrentItem(oldIndex, false)
-            intent.removeExtra("song_tab")
+        binding.fabShuffle.setOnClickListener {
+            if (!hasPermission(Constant.STORAGE_PERMISSION)) {
+                storagePermissionManager()
+                return@setOnClickListener
+            }
+            if (!hasNotificationApi()) return@setOnClickListener
+            val dataSet = musicViewModel.songsList.value
+            if (dataSet.isEmpty()) return@setOnClickListener
+            lifecycleScope.launch(Dispatchers.IO) {
+                AudioPlayerRemote.openAndShuffleQueue(dataSet, true)
+                SongsAdapter.launchPlayer(this@MainActivity)
+            }
         }
     }
     override fun onShowOpenMiniPlayer(isShow: Boolean) {
@@ -250,6 +269,7 @@ class MainActivity : BaseActivity() {
                     .setSingleChoiceItems(items, index) { dialog, which ->
                         if (settings.themeUI != which) {
                             settings.themeUI = which
+                            ThemeManager.clear()
                             AppCompatDelegate.setDefaultNightMode(
                                 which.getDefaultNightMode()
                             )
@@ -284,6 +304,15 @@ class MainActivity : BaseActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+    fun setVisibilityFloating(isVisible: Boolean) {
+        if (binding.mainPager.currentItem == 0) {
+            if (isVisible) {
+                binding.fabShuffle.show()
+            } else {
+                binding.fabShuffle.hide()
+            }
+        }
     }
     override fun onStart() {
         super.onStart()

@@ -2,6 +2,7 @@
 <resources>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="black_translucent_66">#66000000</color>
     <color name="blue_art">#71B8FF</color>
     <color name="green_art">#46BA7A</color>
     <color name="yellow_art">#FFCB6B</color>
@@ -10,12 +11,13 @@
     <color name="red_art">#FF958E</color>
     <color name="cyan_art">#00E0E1</color>
 
-    <color name="light_blue_primary">#00B0FF</color>
-    <color name="light_blue_primary_dark">#0096D9</color>
-    <color name="light_blue_primary_container">#CAE6FF</color>
-    <color name="light_blue_secondary">#28638A</color>
-    <color name="light_blue_secondary_container">#D3E5F6</color>
-    <color name="light_blue_surface_container">#EBEEF3</color>
+    <color name="light_blue_primary">#039BE6</color>
+    <color name="light_blue_primary_container">#CCE5FF</color>
+    <color name="light_blue_secondary">#4F6274</color>
+    <color name="light_blue_on_secondary">#FFFFFF</color>
+    <color name="light_blue_secondary_container">#D0E5FA</color>
+    <color name="light_blue_surface">#F9F9FC</color>
+    <color name="light_blue_surface_container">#E9EEF6</color>
 
     <color name="red_500">#F44336</color>
     <color name="pink_400">#EC407A</color>
@@ -39,7 +41,5 @@
 
     <color name="primary_divider">#EAEAEA</color>
     <color name="widgets_color">#212121</color>
-    <color name="action_color">#5E818181</color>
-    <color name="main_bg">#FCFCFC</color>
-    <color name="toolbar_bg">@color/main_bg</color>
+    <color name="toolbar_bg">#FCFCFC</color>
 </resources>

@@ -6,25 +6,26 @@ import com.bumptech.glide.load.model.ModelLoader.LoadData
 import com.bumptech.glide.load.model.ModelLoaderFactory
 import com.bumptech.glide.load.model.MultiModelLoaderFactory
 import com.bumptech.glide.signature.ObjectKey
+import com.mohammadkk.mymusicplayer.models.Song
 import java.io.InputStream
 
-class AudioFileCoverLoader : ModelLoader<AudioFileCover, InputStream> {
+class AudioFileCoverLoader : ModelLoader<Song, InputStream> {
     override fun buildLoadData(
-        audioFileCover: AudioFileCover,
+        model: Song,
         width: Int,
         height: Int,
         options: Options
     ): LoadData<InputStream> {
         return LoadData(
-            ObjectKey("${audioFileCover.filePath}, ${audioFileCover.albumId}"),
-            AudioFileCoverFetcher(audioFileCover)
+            ObjectKey("${model.data}, ${model.id}"),
+            AudioFileCoverFetcher(model)
         )
     }
-    override fun handles(audioFileCover: AudioFileCover): Boolean {
+    override fun handles(model: Song): Boolean {
         return true
     }
-    class Factory : ModelLoaderFactory<AudioFileCover, InputStream> {
-        override fun build(multiFactory: MultiModelLoaderFactory): ModelLoader<AudioFileCover, InputStream> {
+    class Factory : ModelLoaderFactory<Song, InputStream> {
+        override fun build(multiFactory: MultiModelLoaderFactory): ModelLoader<Song, InputStream> {
             return AudioFileCoverLoader()
         }
         override fun teardown() {

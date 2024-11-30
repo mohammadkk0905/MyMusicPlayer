@@ -22,13 +22,12 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.BaseActivity
+import com.mohammadkk.mymusicplayer.activities.base.BaseActivity
 import com.mohammadkk.mymusicplayer.extensions.applyColor
 import com.mohammadkk.mymusicplayer.extensions.getDrawableCompat
 import com.mohammadkk.mymusicplayer.extensions.shareSongIntent
 import com.mohammadkk.mymusicplayer.extensions.toAlbumArtURI
 import com.mohammadkk.mymusicplayer.extensions.toast
-import com.mohammadkk.mymusicplayer.image.AudioFileCover
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.utils.ThemeManager
@@ -150,15 +149,15 @@ class SongShareDialog : DialogFragment() {
         return if (model == null) {
             null
         } else {
-            if (model is AudioFileCover) {
-                getCoverArt(model.filePath) ?: getFallback(model)
+            if (model is Song) {
+                getCoverArt(model.data) ?: getFallback(model)
             } else {
                 getCoverArt(song.albumId)
             }
         }
     }
-    private fun getFallback(model: AudioFileCover): Bitmap? {
-        val audioIO = runCatching { AudioFileIO.read(File(model.filePath)).tag }.getOrNull()
+    private fun getFallback(model: Song): Bitmap? {
+        val audioIO = runCatching { AudioFileIO.read(File(model.data)).tag }.getOrNull()
         val bytes = audioIO?.firstArtwork?.binaryData?.let {
             BitmapFactory.decodeByteArray(it, 0, it.size, BitmapFactory.Options())
         }

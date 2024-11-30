@@ -3,98 +3,84 @@ package com.mohammadkk.mymusicplayer.fragments
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
+import com.mohammadkk.mymusicplayer.activities.MainActivity
 import com.mohammadkk.mymusicplayer.adapters.SongsAdapter
-import com.mohammadkk.mymusicplayer.databinding.FragmentSongsBinding
-import com.mohammadkk.mymusicplayer.extensions.collectImmediately
+import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.extensions.hasPermission
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
-import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Song
 import com.mohammadkk.mymusicplayer.services.AudioPlayerRemote
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScroller
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollerBuilder
-import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
-import kotlin.math.abs
+import kotlinx.coroutines.launch
 
-class SongsFragment : ABaseFragment(R.layout.fragment_songs) {
-    private var _binding: FragmentSongsBinding? = null
+class SongsFragment : ABaseFragment(R.layout.fragment_libraries) {
+    private var _binding: FragmentLibrariesBinding? = null
     private val binding get() = _binding!!
     private val musicViewModel: MusicViewModel by activityViewModels()
-    private val settings = BaseSettings.getInstance()
     private var songsAdapter: SongsAdapter? = null
     private var unchangedList = listOf<Song>()
+    private var mainActivity: MainActivity? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        _binding = FragmentSongsBinding.bind(view)
-        binding.songsListView.apply {
-            songsAdapter = SongsAdapter(requireActivity(), mutableListOf(), "MAIN")
+        _binding = FragmentLibrariesBinding.bind(view)
+        mainActivity = serviceActivity as? MainActivity
+        binding.listRv.apply {
+            songsAdapter = SongsAdapter(requireActivity(), "MAIN")
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = songsAdapter
-            FastScrollerBuilder(binding.songsListView)
+            FastScrollerBuilder(this)
                 .setPadding(0, 0, 0, 0)
                 .setPopupTextProvider(object : FastScroller.PopupTextProvider {
                     override fun getPopupText(view: View, position: Int): CharSequence {
-                        return getPopupText(position)
+                        return songsAdapter?.getPopupText(position) ?: ""
                     }
                 })
                 .setFastScrollListener(object : FastScroller.Listener {
                     override fun onFastScrollingChanged(isFastScrolling: Boolean) {
-                        if (isFastScrolling) {
-                            binding.fabShuffle.hide()
-                        } else {
-                            binding.fabShuffle.show()
-                        }
+                        mainActivity?.setVisibilityFloating(!isFastScrolling)
                     }
                 }).build()
+
         }
-        collectImmediately(musicViewModel.songsList, ::updateList)
-        collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
+        observeData()
         binding.fragRefresher.setOnRefreshListener {
             binding.fragRefresher.postDelayed({
                 musicViewModel.updateLibraries()
                 binding.fragRefresher.isRefreshing = false
             }, 200)
         }
-        binding.fabShuffle.setOnClickListener {
-            songsAdapter?.startShufflePlayer()
-            initializeBtnShuffle()
-        }
-        initializeBtnShuffle()
     }
     private fun getSpanCountLayout(): Int {
         return resources.getInteger(
             if (requireContext().isLandscape) R.integer.def_list_columns_land else R.integer.def_list_columns
         )
     }
-    private fun getPopupText(position: Int): String {
-        val song = unchangedList.getOrNull(position)
-        val sortName = abs(settings.songsSorting)
-        val result = when (sortName) {
-            Constant.SORT_BY_TITLE -> song?.title
-            Constant.SORT_BY_ALBUM -> song?.album
-            Constant.SORT_BY_ARTIST -> song?.artist
-            Constant.SORT_BY_DURATION -> return song?.duration?.toFormattedDuration(true) ?: "-"
-            else -> song?.title
+    private fun observeData() {
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.songsList.collect(::updateList)
+            }
         }
-        return Libraries.getSectionName(result, true)
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.searchHandle.collect(::handleSearchAdapter)
+            }
+        }
     }
     private fun updateList(songs: List<Song>) {
         unchangedList = songs
         updateAdapter(unchangedList)
         handleEmptyList(false)
-    }
-    private fun initializeBtnShuffle() {
-        val isShuffle = AudioPlayerRemote.isShuffleMode
-        binding.fabShuffle.contentDescription = getString(
-            if (isShuffle) R.string.shuffle_enabled else R.string.shuffle_disabled
-        )
     }
     private fun handleSearchAdapter(search: Triple<Int, Boolean, String>) {
         if (search.first == 0) {
@@ -122,25 +108,27 @@ class SongsFragment : ABaseFragment(R.layout.fragment_songs) {
                 empty.animate().alpha(1f).setDuration(200).withEndAction {
                     binding.empty.alpha = 1f
                 }
-                fabShuffle.visibility = View.INVISIBLE
+                mainActivity?.setVisibilityFloating(false)
                 empty.tag = "animated_alpha"
             }
         } else {
             empty.visibility = View.GONE
             emptyText.setText(R.string.no_artists)
-            fabShuffle.visibility = View.VISIBLE
+            mainActivity?.setVisibilityFloating(true)
             empty.tag = null
         }
     }
     private fun updateAdapter(items: List<Song>) {
         songsAdapter?.swapDataSet(items)
-        binding.fabShuffle.text = items.size.toString()
     }
     override fun onServiceConnected() {
-        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong)
+        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong, AudioPlayerRemote.isPlaying)
     }
     override fun onPlayingMetaChanged() {
-        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong)
+        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong, AudioPlayerRemote.isPlaying)
+    }
+    override fun onPlayStateChanged() {
+        songsAdapter?.setPlaying(AudioPlayerRemote.currentSong, AudioPlayerRemote.isPlaying)
     }
     override fun onMediaStoreChanged() {
         super.onMediaStoreChanged()

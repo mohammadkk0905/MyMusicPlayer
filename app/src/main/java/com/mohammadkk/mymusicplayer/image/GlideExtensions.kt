@@ -18,7 +18,6 @@ import com.mohammadkk.mymusicplayer.R
 import com.mohammadkk.mymusicplayer.extensions.getColorCompat
 import com.mohammadkk.mymusicplayer.extensions.getDrawableCompat
 import com.mohammadkk.mymusicplayer.extensions.toAlbumArtURI
-import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import com.mohammadkk.mymusicplayer.models.Song
 
 object GlideExtensions {
@@ -28,15 +27,8 @@ object GlideExtensions {
     fun getSongModel(song: Song): Any? {
         return when (BaseSettings.getInstance().coverMode) {
             Constant.COVER_OFF -> return null
-            Constant.COVER_MEDIA_STORE -> if (!song.isOTGMode()) {
-                song.albumId.toAlbumArtURI()
-            } else {
-                AudioFileCover(song.data, song.albumId)
-            }
-            else -> {
-                val path = if (!song.isOTGMode()) song.data else song.toContentUri().toString()
-                AudioFileCover(path, song.albumId)
-            }
+            Constant.COVER_MEDIA_STORE -> if (!song.isOTGMode()) song.albumId.toAlbumArtURI() else song
+            else -> song
         }
     }
     fun <T> RequestBuilder<T>.getCoverOptions(

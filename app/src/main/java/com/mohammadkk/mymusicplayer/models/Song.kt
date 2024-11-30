@@ -1,6 +1,7 @@
 package com.mohammadkk.mymusicplayer.models
 
 import android.os.Parcelable
+import com.mohammadkk.mymusicplayer.extensions.toContentUri
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -21,6 +22,9 @@ data class Song(
 ) : Parcelable {
     fun isOTGMode(): Boolean {
         return albumId == 0L || artistId == 0L
+    }
+    fun getPath(): String {
+        return if (isOTGMode()) toContentUri().toString() else data
     }
     companion object {
         @JvmStatic

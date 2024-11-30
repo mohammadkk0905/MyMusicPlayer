@@ -12,7 +12,7 @@
             <item android:state_activated="true">
                 <shape android:shape="rectangle">
                     <corners android:radius="@dimen/spacing_small" />
-                    <solid android:color="?attr/colorSecondaryContainer" />
+                    <solid android:color="?android:attr/colorControlHighlight" />
                 </shape>
             </item>
         </selector>

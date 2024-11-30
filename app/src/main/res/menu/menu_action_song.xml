@@ -4,7 +4,7 @@
     <item
         android:id="@+id/action_share"
         android:icon="@drawable/ic_share"
-        android:title="@string/share"
+        android:title="@string/action_share"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_ringtone"
@@ -19,6 +19,6 @@
     <item
         android:id="@+id/action_remove_file"
         android:icon="@drawable/ic_trash"
-        android:title="@string/remove_from_device"
+        android:title="@string/action_delete_from_device"
         app:showAsAction="never" />
 </menu>

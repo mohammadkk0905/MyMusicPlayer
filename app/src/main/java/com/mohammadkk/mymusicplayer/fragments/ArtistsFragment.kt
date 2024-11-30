@@ -1,38 +1,33 @@
 package com.mohammadkk.mymusicplayer.fragments
 
-import android.content.Intent
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
 import com.mohammadkk.mymusicplayer.adapters.AbsMultiAdapter
 import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemGridArtistBinding
-import com.mohammadkk.mymusicplayer.dialogs.DeleteSongsDialog
 import com.mohammadkk.mymusicplayer.extensions.bind
-import com.mohammadkk.mymusicplayer.extensions.collectImmediately
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
-import com.mohammadkk.mymusicplayer.extensions.shareSongsIntent
+import com.mohammadkk.mymusicplayer.extensions.launchPlayerList
+import com.mohammadkk.mymusicplayer.extensions.makeSectionName
 import com.mohammadkk.mymusicplayer.extensions.toFormattedDuration
 import com.mohammadkk.mymusicplayer.models.Artist
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScroller
 import com.mohammadkk.mymusicplayer.ui.fastscroll.FastScrollerBuilder
-import com.mohammadkk.mymusicplayer.utils.Libraries
-import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 class ArtistsFragment : Fragment(R.layout.fragment_libraries) {
@@ -45,19 +40,30 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentLibrariesBinding.bind(view)
         binding.listRv.apply {
-            artistsAdapter = ArtistsAdapter(requireActivity(), mutableListOf())
+            artistsAdapter = ArtistsAdapter(requireActivity())
             setHasFixedSize(true)
             layoutManager = GridLayoutManager(requireContext(), getSpanCountLayout())
             adapter = artistsAdapter
             FastScrollerBuilder(binding.listRv).setPadding(Rect()).build()
         }
-        collectImmediately(musicViewModel.artistsList, ::updateList)
-        collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
+        observeData()
         binding.fragRefresher.setOnRefreshListener {
             binding.fragRefresher.postDelayed({
                 musicViewModel.updateLibraries()
                 binding.fragRefresher.isRefreshing = false
             }, 200)
+        }
+    }
+    private fun observeData() {
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.artistsList.collect(::updateList)
+            }
+        }
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.searchHandle.collect(::handleSearchAdapter)
+            }
         }
     }
     private fun updateList(artists: List<Artist>) {
@@ -105,84 +111,61 @@ class ArtistsFragment : Fragment(R.layout.fragment_libraries) {
         }
     }
     private class ArtistsAdapter(
-        context: FragmentActivity,
-        var dataSet: MutableList<Artist>
+        context: FragmentActivity
     ) : AbsMultiAdapter<ArtistsAdapter.ViewHolder, Artist>(context), FastScroller.PopupTextProvider {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val inflater = LayoutInflater.from(parent.context)
             return ViewHolder(ItemGridArtistBinding.inflate(inflater, parent, false))
         }
-        override fun onMultiplePrepareActionMode(menu: Menu): Boolean {
-            baseSettings.actionModeIndex = 2
-            return true
-        }
-        override fun onMultipleItemAction(menuItem: MenuItem, selection: List<Artist>) {
-            val selectedItems = selection.flatMap { it.songs }
-            when (menuItem.itemId) {
-                R.id.action_share -> context.shareSongsIntent(selectedItems)
-                R.id.action_remove_files -> DeleteSongsDialog.create(
-                    selectedItems, context.supportFragmentManager
-                )
-            }
-        }
         override fun getIdentifier(position: Int): Artist? {
-            return dataSet.getOrNull(position)
-        }
-        override fun getItemCount(): Int {
-            return dataSet.size
+            return dataset.getOrNull(position)
         }
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bindItems(dataSet[holder.absoluteAdapterPosition])
+            holder.bindItems(dataset[holder.absoluteAdapterPosition])
         }
         override fun getPopupText(view: View, position: Int): CharSequence {
-            val artist = dataSet.getOrNull(position)
+            val artist = dataset.getOrNull(position)
             val result = when (abs(baseSettings.artistsSorting)) {
                 Constant.SORT_BY_TITLE -> artist?.title
                 Constant.SORT_BY_DURATION -> return artist?.duration?.toFormattedDuration(true) ?: "-"
                 else -> artist?.title
             }
-            return Libraries.getSectionName(result, true)
+            return result.makeSectionName()
         }
         fun swapDataSet(dataSet: List<Artist>) {
-            this.dataSet = ArrayList(dataSet)
-            notifyDataSetChanged()
-        }
-        private fun startTracks(artist: Artist) {
-            Intent(context, PlayerListActivity::class.java).apply {
-                val json = Constant.pairStateToJson(Pair(Constant.ARTIST_TAB, artist.id))
-                putExtra(Constant.LIST_CHILD, json)
-                val options = ActivityOptionsCompat.makeCustomAnimation(
-                    context, android.R.anim.fade_in, android.R.anim.fade_out
-                ).toBundle()
-                context.startActivity(this, options)
-            }
+            this.dataset = dataSet.toMutableList()
         }
         inner class ViewHolder(private val binding: ItemGridArtistBinding) : RecyclerView.ViewHolder(binding.root) {
-            fun bindItems(artist: Artist) {
-                with(binding) {
-                    if (checked.contains(artist)) {
-                        checkbox.visibility = View.VISIBLE
-                        root.setCardBackgroundColor(ThemeManager.colorPrimaryAlpha)
+            fun bindItems(artist: Artist) = with(binding) {
+                menu.visibility = View.GONE
+                if (selectionController.isFirstSelected) {
+                    checkbox.visibility = View.VISIBLE
+                } else {
+                    checkbox.visibility = View.GONE
+                }
+                if (selectionController.isSelected(artist)) {
+                    root.isActivated = true
+                    checkbox.isChecked = true
+                } else {
+                    root.isActivated = false
+                    checkbox.isChecked = false
+                }
+                tvTitle.text = artist.title
+                text.text = context.getString(
+                    R.string.artists_symbol, artist.albumCount, artist.trackCount
+                )
+                image.bind(artist.getSafeSong(), R.drawable.ic_artist)
+                root.setOnClickListener {
+                    if (selectionController.isInQuickSelectMode) {
+                        selectionController.toggle(absoluteAdapterPosition)
                     } else {
-                        checkbox.visibility = View.INVISIBLE
-                        root.setCardBackgroundColor(Color.TRANSPARENT)
-                    }
-                    tvTitle.text = artist.title
-                    tvText.text = context.getString(
-                        R.string.artists_symbol, artist.albumCount, artist.trackCount
-                    )
-                    image.bind(artist.getSafeSong(), R.drawable.ic_artist)
-                    root.setOnClickListener {
-                        if (isInQuickSelectMode) {
-                            toggleChecked(absoluteAdapterPosition)
-                        } else {
-                            if (!Constant.isBlockingClick()) startTracks(artist)
+                        if (!Constant.isBlockingClick()) {
+                            context.launchPlayerList(Constant.ARTIST_TAB, artist.id)
                         }
                     }
-                    root.setOnLongClickListener {
-                        toggleChecked(absoluteAdapterPosition)
-                        true
-                    }
+                }
+                root.setOnLongClickListener {
+                    selectionController.toggle(absoluteAdapterPosition)
                 }
             }
         }

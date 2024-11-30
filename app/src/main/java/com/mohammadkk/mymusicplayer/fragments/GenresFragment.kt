@@ -1,16 +1,16 @@
 package com.mohammadkk.mymusicplayer.fragments
 
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -18,22 +18,18 @@ import com.bumptech.glide.Glide
 import com.mohammadkk.mymusicplayer.BaseSettings
 import com.mohammadkk.mymusicplayer.Constant
 import com.mohammadkk.mymusicplayer.R
-import com.mohammadkk.mymusicplayer.activities.PlayerListActivity
 import com.mohammadkk.mymusicplayer.databinding.FragmentLibrariesBinding
 import com.mohammadkk.mymusicplayer.databinding.ItemGenreBinding
-import com.mohammadkk.mymusicplayer.extensions.collectImmediately
 import com.mohammadkk.mymusicplayer.extensions.isLandscape
+import com.mohammadkk.mymusicplayer.extensions.launchPlayerList
 import com.mohammadkk.mymusicplayer.image.GlideExtensions
 import com.mohammadkk.mymusicplayer.image.GlideExtensions.getCoverOptions
 import com.mohammadkk.mymusicplayer.image.palette.MusicColoredTarget
 import com.mohammadkk.mymusicplayer.image.palette.PaletteColors
 import com.mohammadkk.mymusicplayer.models.Genre
-import com.mohammadkk.mymusicplayer.utils.Libraries
 import com.mohammadkk.mymusicplayer.utils.ThemeManager
 import com.mohammadkk.mymusicplayer.viewmodels.MusicViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class GenresFragment : Fragment(R.layout.fragment_libraries) {
     private val musicViewModel: MusicViewModel by activityViewModels()
@@ -51,8 +47,7 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
             layoutManager = createLayoutManager()
             adapter = genreAdapter
         }
-        collectImmediately(musicViewModel.genresList, ::updateList)
-        collectImmediately(musicViewModel.searchHandle, ::handleSearchAdapter)
+        observeData()
         binding.fragRefresher.setOnRefreshListener {
             binding.fragRefresher.postDelayed({
                 musicViewModel.updateLibraries()
@@ -66,6 +61,18 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
             GridLayoutManager(contextActivity, 4)
         } else {
             GridLayoutManager(contextActivity, 2)
+        }
+    }
+    private fun observeData() {
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.genresList.collect(::updateList)
+            }
+        }
+        lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                musicViewModel.searchHandle.collect(::handleSearchAdapter)
+            }
         }
     }
     private fun updateList(genres: List<Genre>) {
@@ -131,40 +138,26 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
             dataSet = list
             notifyDataSetChanged()
         }
-        private fun startTracks(genre: Genre) {
-            Intent(context, PlayerListActivity::class.java).apply {
-                val json = Constant.pairStateToJson(Pair(Constant.GENRE_TAB, genre.id))
-                putExtra(Constant.LIST_CHILD, json)
-                val options = ActivityOptionsCompat.makeCustomAnimation(
-                    context, android.R.anim.fade_in, android.R.anim.fade_out
-                ).toBundle()
-                context.startActivity(this, options)
-            }
-        }
         private fun loadGenreImage(genre: Genre, binding: ItemGenreBinding) {
-            context.lifecycleScope.launch(Dispatchers.IO) {
-                val genreSong = Libraries.songByGenre(context.contentResolver, genre.id)
-                withContext(Dispatchers.Main) {
-                    val drawable = GlideExtensions.getCoverArt(context, genreSong.id, R.drawable.ic_audiotrack)
-                    if (settings.coverMode != Constant.COVER_OFF) {
-                        Glide.with(context)
-                            .asBitmap()
-                            .getCoverOptions(genreSong, drawable)
-                            .load(GlideExtensions.getSongModel(genreSong))
-                            .into(object : MusicColoredTarget(binding.image) {
-                                override fun onResolveColor(colors: PaletteColors) {
-                                    binding.root.rippleColor = ColorStateList.valueOf(
-                                        ThemeManager.withAlpha(colors.backgroundColor, 0.35f)
-                                    )
-                                    binding.root.setCardBackgroundColor(colors.backgroundColor)
-                                    binding.tvTitle.setTextColor(colors.primaryTextColor)
-                                    binding.tvText.setTextColor(colors.secondaryTextColor)
-                                }
-                            })
-                    } else {
-                        binding.image.setImageDrawable(drawable)
-                    }
-                }
+            val genreSong = genre.currentSong
+            val drawable = GlideExtensions.getCoverArt(context, genreSong.id, R.drawable.ic_audiotrack)
+            if (settings.coverMode != Constant.COVER_OFF) {
+                Glide.with(context)
+                    .asBitmap()
+                    .getCoverOptions(genreSong, drawable)
+                    .load(GlideExtensions.getSongModel(genreSong))
+                    .into(object : MusicColoredTarget(binding.image) {
+                        override fun onResolveColor(colors: PaletteColors) {
+                            binding.root.rippleColor = ColorStateList.valueOf(
+                                ThemeManager.withAlpha(colors.backgroundColor, 0.35f)
+                            )
+                            binding.root.setCardBackgroundColor(colors.backgroundColor)
+                            binding.tvTitle.setTextColor(colors.primaryTextColor)
+                            binding.tvText.setTextColor(colors.secondaryTextColor)
+                        }
+                    })
+            } else {
+                binding.image.setImageDrawable(drawable)
             }
         }
         inner class ViewHolder(val binding: ItemGenreBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -176,7 +169,7 @@ class GenresFragment : Fragment(R.layout.fragment_libraries) {
                 loadGenreImage(genre, binding)
                 binding.root.setOnClickListener {
                     if (!Constant.isBlockingClick()) {
-                        startTracks(genre)
+                        context.launchPlayerList(Constant.GENRE_TAB, genre.id)
                     }
                 }
             }

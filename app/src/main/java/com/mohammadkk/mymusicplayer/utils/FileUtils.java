@@ -6,13 +6,13 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.Environment;
 import android.util.Log;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.mohammadkk.mymusicplayer.models.Song;
 import com.mohammadkk.mymusicplayer.providers.SortedCursor;
+import com.mohammadkk.mymusicplayer.repo.mediastore.MediaStoreSongs;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,6 +26,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
+
+import kotlin.Pair;
 
 public class FileUtils {
     public static final FileFilter AUDIO_FILE_FILTER = file -> {
@@ -62,9 +64,7 @@ public class FileUtils {
                                 int index = path.lastIndexOf('/');
                                 if (index != -1) {
                                     String newPath = "/storage/" + path.substring(index + 1);
-                                    if (new File(newPath).isDirectory()) {
-                                        path = newPath;
-                                    }
+                                    if (new File(newPath).isDirectory()) path = newPath;
                                 }
                             }
                             paths.add(path);
@@ -90,7 +90,17 @@ public class FileUtils {
                 }
             }
         }
-        return storageItems;
+        return distanceRoots(storageItems);
+    }
+    private static ArrayList<Pair<String, File>> distanceRoots(final ArrayList<Pair<String, File>> storageItems) {
+        final ArrayList<Pair<String, File>> result = new ArrayList<>();
+        final HashSet<String> hashSet = new HashSet<>();
+        for (Pair<String, File> storage : storageItems) {
+            if (hashSet.add(storage.getSecond().getAbsolutePath())) {
+                result.add(storage);
+            }
+        }
+        return result;
     }
     public static String safeGetCanonicalPath(File file) {
         try {
@@ -143,7 +153,7 @@ public class FileUtils {
     }
     @NonNull
     public static List<Song> matchFilesWithMediaStore(@NonNull Context context, @Nullable List<File> files) {
-        return Libraries.fetchAllSongs(makeSongCursor(context, files));
+        return MediaStoreSongs.intoSongs(makeSongCursor(context, files));
     }
     @Nullable
     public static SortedCursor makeSongCursor(@NonNull final Context context, @Nullable final List<File> files) {
@@ -156,7 +166,8 @@ public class FileUtils {
                 selection = "_data IN (" + makePlaceholders(files.size()) + ")";
             }
         }
-        Cursor songCursor =  Libraries.makeSongCursor(context, selection, selection == null ? null : paths);
+        String sort = MediaStoreSongs.defaultSortOrder();
+        Cursor songCursor = MediaStoreSongs.querySongs(context, selection, selection == null ? null : paths, sort);
         return songCursor == null ? null : new SortedCursor(songCursor, paths, "_data");
     }
     private static String makePlaceholders(int len) {
